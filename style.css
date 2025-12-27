@@ -177,7 +177,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 6px;
     padding: 20px;
     text-decoration: none;
     color: var(--text-secondary);
