@@ -163,7 +163,7 @@ body {
     background: var(--card-bg);
     border-radius: 15px;
     padding: 10px;
-    gap: 15px;
+    gap: 8px;
     border: 2px solid var(--border-color);
     margin: 0 20px;
     min-width: 400px;
