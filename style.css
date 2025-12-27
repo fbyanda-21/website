@@ -162,7 +162,7 @@ body {
     display: flex;
     background: var(--card-bg);
     border-radius: 15px;
-    padding: 8px;
+    padding: 10px;
     gap: 5px;
     border: 2px solid var(--border-color);
     margin: 0 20px;
