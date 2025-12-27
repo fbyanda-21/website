@@ -183,7 +183,7 @@ body {
     color: var(--text-secondary);
     border-radius: 12px;
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.75rem;
     transition: all 0.3s ease;
     white-space: nowrap;
     cursor: pointer;
