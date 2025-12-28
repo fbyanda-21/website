@@ -1,13 +1,7 @@
 // ==================== KONFIGURASI ====================
 const CONFIG = {
-    API_BASE_URL: 'api/download.php',
-    FALLBACK_APIS: {
-        instagram: 'https://instagram-downloader-api3.p.rapidapi.com/download',
-        tiktok: 'https://tiktok-video-no-watermark2.p.rapidapi.com/',
-        youtube: 'https://youtube-video-download-info.p.rapidapi.com/dl',
-        facebook: 'https://facebook-reel-and-video-downloader.p.rapidapi.com/api/facebookVideo'
-    },
-    RAPIDAPI_KEY: '15b2e1d1d0msh0ac4048b4645f31p1f6dc9jsn938e039327f3'
+    API_BASE_URL: '/api/download',
+    PLATFORMS: ['instagram', 'tiktok', 'youtube', 'facebook']
 };
 
 // ==================== VARIABLES ====================
@@ -31,16 +25,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 1500);
 
-    // Inisialisasi semua fungsi
     initializeTheme();
     initializeNavigation();
     initializeEventListeners();
     
-    // Load dashboard pertama kali
     loadDashboard();
-    
-    // Check server status
-    checkServerStatus();
 });
 
 // ==================== THEME MANAGEMENT ====================
@@ -66,7 +55,6 @@ function toggleTheme() {
         updateThemeToggle('dark');
     }
     
-    // Add feedback animation
     const toggle = document.getElementById('floatingThemeToggle');
     if (toggle) {
         toggle.style.transform = 'scale(0.9)';
@@ -93,23 +81,14 @@ function updateThemeToggle(theme) {
 
 // ==================== NAVIGATION MANAGEMENT ====================
 function initializeNavigation() {
-    console.log('Initializing navigation...');
-    
     const navItems = document.querySelectorAll('.nav-item');
     navItems.forEach(item => {
         item.addEventListener('click', function(e) {
             e.preventDefault();
-            e.stopPropagation();
             
-            console.log('Navigation clicked:', this.id);
-            
-            // Remove active class from all items
             navItems.forEach(nav => nav.classList.remove('active'));
-            
-            // Add active class to clicked item
             this.classList.add('active');
             
-            // Load corresponding content
             switch(this.id) {
                 case 'navHome':
                     loadDashboard();
@@ -130,45 +109,16 @@ function initializeNavigation() {
 
 // ==================== EVENT LISTENERS ====================
 function initializeEventListeners() {
-    console.log('Initializing event listeners...');
-    
-    // Theme toggle (FLOATING BUTTON)
     const floatingThemeToggle = document.getElementById('floatingThemeToggle');
     if (floatingThemeToggle) {
         floatingThemeToggle.addEventListener('click', toggleTheme);
-        
-        // Add pulse animation on hover
-        floatingThemeToggle.addEventListener('mouseenter', function() {
-            this.classList.add('pulse');
-        });
-        
-        floatingThemeToggle.addEventListener('mouseleave', function() {
-            this.classList.remove('pulse');
-        });
     }
     
-    // Navigation
-    initializeNavigation();
-    
-    // Search box
     const searchBox = document.getElementById('platformSearch');
     if (searchBox) {
         searchBox.addEventListener('input', function(e) {
             filterPlatforms(this.value.toLowerCase());
         });
-    }
-    
-    // Close video popup dengan ESC
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            closeVideoPopup();
-        }
-    });
-    
-    // Close popup button
-    const closePopup = document.querySelector('.close-popup');
-    if (closePopup) {
-        closePopup.addEventListener('click', closeVideoPopup);
     }
 }
 
@@ -199,18 +149,13 @@ function updateBreadcrumb(text) {
 
 // ==================== DASHBOARD PAGE ====================
 function loadDashboard() {
-    console.log('📊 Loading dashboard...');
-    
-    // Hide all containers
     hideAllContainers();
     
-    // Show dashboard container
     const container = document.getElementById('dashboardContainer');
     if (container) {
         container.style.display = 'block';
         updateBreadcrumb('Home');
         
-        // Load dashboard content
         container.innerHTML = `
             <div class="welcome-section" style="margin-bottom: 40px;">
                 <h1 style="font-size: 2.5rem; margin-bottom: 10px; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Selamat Datang! 👋</h1>
@@ -310,18 +255,13 @@ function loadDashboard() {
 
 // ==================== TOOLS PAGE ====================
 function loadToolsPage() {
-    console.log('🛠️ Loading tools page...');
-    
-    // Hide all containers
     hideAllContainers();
     
-    // Show tools container
     const container = document.getElementById('toolsContainer');
     if (container) {
         container.style.display = 'block';
         updateBreadcrumb('Tools');
         
-        // Load tools content
         container.innerHTML = `
             <div class="welcome-section" style="margin-bottom: 40px;">
                 <h1 style="font-size: 2.5rem; margin-bottom: 10px; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">🛠️ Tools Download</h1>
@@ -371,18 +311,13 @@ function loadToolsPage() {
 
 // ==================== HOW TO USE PAGE ====================
 function loadHowToUsePage() {
-    console.log('📖 Loading how to use page...');
-    
-    // Hide all containers
     hideAllContainers();
     
-    // Show guide container
     const container = document.getElementById('guideContainer');
     if (container) {
         container.style.display = 'block';
         updateBreadcrumb('Cara Pakai');
         
-        // Load how to use content
         container.innerHTML = `
             <div style="max-width: 800px; margin: 0 auto;">
                 <h1 style="font-size: 2.5rem; margin-bottom: 30px; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">📖 Panduan Penggunaan</h1>
@@ -446,18 +381,13 @@ function loadHowToUsePage() {
 
 // ==================== API STATUS PAGE ====================
 function loadAPIStatusPage() {
-    console.log('📡 Loading API status page...');
-    
-    // Hide all containers
     hideAllContainers();
     
-    // Show status container
     const container = document.getElementById('statusContainer');
     if (container) {
         container.style.display = 'block';
         updateBreadcrumb('Status API');
         
-        // Load API status content
         container.innerHTML = `
             <div style="max-width: 800px; margin: 0 auto;">
                 <h1 style="font-size: 2.5rem; margin-bottom: 30px; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">📡 Status Sistem</h1>
@@ -518,40 +448,32 @@ function loadAPIStatusPage() {
 
 // ==================== TOOL PAGE LOADER ====================
 function loadToolPage(tool) {
-    console.log(`🛠️ Loading ${tool} tool page...`);
-    
-    // Hide all containers
     hideAllContainers();
     
-    // Show tool container
     const container = document.getElementById('toolContainer');
     if (container) {
         container.style.display = 'block';
         updateBreadcrumb(tool.charAt(0).toUpperCase() + tool.slice(1));
         
-        // Load the tool
         loadTool(tool);
     }
 }
 
 // ==================== TOOL LOADER ====================
 function loadTool(tool) {
-    console.log(`🛠️ Loading ${tool} tool...`);
-    
     currentTool = tool;
     currentVideoData = null;
     
     const container = document.getElementById('toolContainer');
     if (!container) return;
     
-    // Tool configuration
     const toolConfig = {
         instagram: {
             name: 'Instagram',
             icon: 'fab fa-instagram',
             color: '#E1306C',
             placeholder: 'Tempel link Instagram (reel, video, foto)...',
-            example: 'https://www.instagram.com/p/Cxample...',
+            example: 'https://www.instagram.com/reel/Cxample...',
             description: 'Download video, foto, dan reel Instagram tanpa watermark dalam kualitas HD'
         },
         tiktok: {
@@ -567,7 +489,7 @@ function loadTool(tool) {
             icon: 'fab fa-youtube',
             color: '#FF0000',
             placeholder: 'Tempel link YouTube...',
-            example: 'https://www.youtube.com/watch?v=example...',
+            example: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
             description: 'Download video YouTube dalam berbagai kualitas hingga 4K'
         },
         facebook: {
@@ -692,10 +614,8 @@ function loadTool(tool) {
         </div>
     `;
     
-    // Initialize tool-specific event listeners
     initializeToolListeners();
     
-    // Hide sections initially
     const previewSection = document.getElementById('previewSection');
     const qualitySelector = document.getElementById('qualitySelector');
     const downloadProgress = document.getElementById('downloadProgress');
@@ -719,20 +639,12 @@ function initializeToolListeners() {
                 analyzeURL();
             }
         });
-        
-        // Clear placeholder on click
-        urlInput.addEventListener('click', function() {
-            if (this.value.includes('...')) {
-                this.value = '';
-            }
-        });
     }
 }
 
 function setDownloadType(type) {
     currentDownloadType = type;
     
-    // Update UI
     document.querySelectorAll('.type-option').forEach(option => {
         option.classList.remove('active');
     });
@@ -742,7 +654,6 @@ function setDownloadType(type) {
         activeOption.classList.add('active');
     }
     
-    // Refresh quality options if video data exists
     if (currentVideoData) {
         showQualityOptions(currentVideoData);
     }
@@ -758,7 +669,6 @@ async function analyzeURL() {
     
     const url = urlInput.value.trim();
     
-    // Validation
     if (!url) {
         showNotification('Masukkan link terlebih dahulu', 'error');
         urlInput.focus();
@@ -770,12 +680,10 @@ async function analyzeURL() {
         return;
     }
     
-    // Set analyzing state
     isAnalyzing = true;
     analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menganalisis...';
     analyzeBtn.disabled = true;
     
-    // Reset previous data
     currentVideoData = null;
     const previewSection = document.getElementById('previewSection');
     const qualitySelector = document.getElementById('qualitySelector');
@@ -784,48 +692,49 @@ async function analyzeURL() {
     if (qualitySelector) qualitySelector.style.display = 'none';
     
     try {
-        console.log(`🔍 Analyzing ${currentTool} URL: ${url}`);
-        
-        // Show analyzing notification
         const notifId = showNotification('Menganalisis link...', 'info', 0);
         
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Simulasi API call untuk demo
+        await new Promise(resolve => setTimeout(resolve, 1500));
         
-        // Simulated video data
-        const videoData = {
-            title: `Video ${currentTool} Contoh`,
-            thumbnail: getDefaultThumbnail(currentTool),
-            duration: '2:30',
-            author: 'Contoh User',
-            qualities: [
-                { quality: 'HD', url: '#' },
-                { quality: 'SD', url: '#' }
-            ],
-            audio: { url: '#' }
-        };
-        
-        // Remove analyzing notification
         removeNotification(notifId);
         
-        // Store video data
-        currentVideoData = videoData;
+        // Data demo untuk testing
+        const demoData = {
+            title: `Video ${currentTool} - Demo`,
+            thumbnail: getDefaultThumbnail(currentTool),
+            duration: '2:15',
+            author: 'Demo User',
+            videos: [
+                {
+                    quality: 'HD',
+                    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+                    size: '25 MB'
+                },
+                {
+                    quality: 'SD',
+                    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+                    size: '15 MB'
+                }
+            ],
+            audio: {
+                url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
+            }
+        };
         
-        // Show preview
-        showPreview(videoData);
+        currentVideoData = demoData;
         
-        // Show quality options
-        showQualityOptions(videoData);
+        showPreview(demoData);
+        showQualityOptions(demoData);
         
-        // Success notification
         showNotification('Berhasil menganalisis video!', 'success');
+        updateDownloadCount();
         
     } catch (error) {
         console.error('❌ Analysis error:', error);
         showNotification('Gagal menganalisis video', 'error');
         
     } finally {
-        // Reset analyzing state
         isAnalyzing = false;
         if (analyzeBtn) {
             analyzeBtn.innerHTML = '<i class="fas fa-search"></i> Analisis Tautan';
@@ -842,16 +751,14 @@ function showPreview(videoData) {
     
     if (!previewSection || !videoPreview || !previewInfo) return;
     
-    // Show section
     previewSection.style.display = 'block';
     previewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     
-    // Build preview HTML
     videoPreview.innerHTML = `
         <div class="video-container">
             <img src="${videoData.thumbnail}" alt="${videoData.title}" 
                  onerror="this.src='https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=600&h=400&fit=crop'">
-            <div class="play-overlay" onclick="playVideoPreview('${videoData.qualities[0]?.url || ''}')">
+            <div class="play-overlay" onclick="playVideoPreview('${videoData.videos[0]?.url || ''}')">
                 <i class="fas fa-play"></i>
             </div>
             <div class="video-info-overlay">
@@ -861,7 +768,6 @@ function showPreview(videoData) {
         </div>
     `;
     
-    // Build info HTML
     previewInfo.innerHTML = `
         <div class="info-row">
             <span><i class="fas fa-film"></i> Platform</span>
@@ -892,68 +798,45 @@ function showQualityOptions(videoData) {
     
     if (!qualitySelector || !qualityOptions) return;
     
-    // Show section
     qualitySelector.style.display = 'block';
     qualitySelector.scrollIntoView({ behavior: 'smooth', block: 'start' });
     
     let optionsHTML = '';
     
     if (currentDownloadType === 'audio') {
-        // Audio options
-        if (videoData.audio) {
+        optionsHTML += `
+            <div class="quality-option">
+                <div class="quality-header">
+                    <h4><i class="fas fa-music"></i> Audio Original</h4>
+                    <span class="quality-badge">MP3</span>
+                </div>
+                <p><i class="fas fa-volume-up"></i> Kualitas asli</p>
+                <p><i class="fas fa-file-audio"></i> Format: MP3</p>
+                <button class="download-btn" onclick="downloadFile('${videoData.audio.url}', 'audio', '${videoData.title}.mp3')">
+                    <i class="fas fa-download"></i> Download MP3
+                </button>
+            </div>
+        `;
+    } else {
+        videoData.videos.forEach((quality, index) => {
+            const qualityLabel = quality.quality || (index === 0 ? 'HD' : 'SD');
+            const size = quality.size || estimateFileSize(qualityLabel);
+            
             optionsHTML += `
                 <div class="quality-option">
                     <div class="quality-header">
-                        <h4><i class="fas fa-music"></i> Audio Original</h4>
-                        <span class="quality-badge">MP3</span>
+                        <h4><i class="fas fa-video"></i> ${qualityLabel}</h4>
+                        <span class="quality-badge">${qualityLabel}</span>
                     </div>
-                    <p><i class="fas fa-volume-up"></i> Kualitas asli</p>
-                    <p><i class="fas fa-file-audio"></i> Format: MP3</p>
-                    <button class="download-btn" onclick="downloadFile('${videoData.audio.url}', 'audio', '${videoData.title}.mp3')">
-                        <i class="fas fa-download"></i> Download MP3
+                    <p><i class="fas fa-tv"></i> Kualitas ${qualityLabel}</p>
+                    <p><i class="fas fa-hdd"></i> Perkiraan: ${size}</p>
+                    <p><i class="fas fa-ban"></i> Tanpa watermark</p>
+                    <button class="download-btn" onclick="downloadFile('${quality.url}', 'video', '${videoData.title} - ${qualityLabel}.mp4')">
+                        <i class="fas fa-download"></i> Download ${qualityLabel}
                     </button>
                 </div>
             `;
-        } else {
-            optionsHTML = `
-                <div style="text-align: center; padding: 40px; color: var(--text-secondary); grid-column: 1 / -1;">
-                    <i class="fas fa-music-slash" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;"></i>
-                    <h3>Audio tidak tersedia</h3>
-                    <p>Video ini tidak memiliki audio terpisah</p>
-                </div>
-            `;
-        }
-    } else {
-        // Video options
-        if (videoData.qualities && videoData.qualities.length > 0) {
-            videoData.qualities.forEach((quality, index) => {
-                const qualityLabel = quality.quality || (index === 0 ? 'HD' : 'SD');
-                const size = quality.size || estimateFileSize(qualityLabel);
-                
-                optionsHTML += `
-                    <div class="quality-option">
-                        <div class="quality-header">
-                            <h4><i class="fas fa-video"></i> ${qualityLabel}</h4>
-                            <span class="quality-badge">${qualityLabel}</span>
-                        </div>
-                        <p><i class="fas fa-tv"></i> Kualitas ${qualityLabel}</p>
-                        <p><i class="fas fa-hdd"></i> Perkiraan: ${size}</p>
-                        <p><i class="fas fa-ban"></i> Tanpa watermark</p>
-                        <button class="download-btn" onclick="downloadFile('${quality.url}', 'video', '${videoData.title} - ${qualityLabel}.mp4')">
-                            <i class="fas fa-download"></i> Download ${qualityLabel}
-                        </button>
-                    </div>
-                `;
-            });
-        } else {
-            optionsHTML = `
-                <div style="text-align: center; padding: 40px; color: var(--text-secondary); grid-column: 1 / -1;">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 20px; color: var(--warning-color);"></i>
-                    <h3>Kualitas tidak tersedia</h3>
-                    <p>Tidak ada pilihan kualitas untuk video ini</p>
-                </div>
-            `;
-        }
+        });
     }
     
     qualityOptions.innerHTML = optionsHTML;
@@ -981,24 +864,14 @@ function getDefaultThumbnail(platform) {
 
 function estimateFileSize(quality) {
     const sizes = {
-        '144p': '5-10 MB',
-        '240p': '10-20 MB',
-        '360p': '20-40 MB',
-        '480p': '40-70 MB',
-        '720p': '70-150 MB',
-        '1080p': '150-300 MB',
-        '2K': '300-500 MB',
-        '4K': '500 MB - 1 GB',
         'HD': '100-200 MB',
         'SD': '50-100 MB'
     };
-    
     return sizes[quality] || 'Unknown';
 }
 
 function filterPlatforms(searchTerm) {
     const cards = document.querySelectorAll('.tool-card');
-    let found = false;
     
     cards.forEach(card => {
         const title = card.querySelector('h3').textContent.toLowerCase();
@@ -1006,24 +879,10 @@ function filterPlatforms(searchTerm) {
         
         if (title.includes(searchTerm) || desc.includes(searchTerm)) {
             card.style.display = 'block';
-            found = true;
         } else {
             card.style.display = 'none';
         }
     });
-    
-    if (!found && searchTerm) {
-        const platformsGrid = document.getElementById('platformsGrid');
-        if (platformsGrid) {
-            platformsGrid.innerHTML += `
-                <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-secondary);">
-                    <i class="fas fa-search" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;"></i>
-                    <h3>Platform tidak ditemukan</h3>
-                    <p>Coba cari dengan kata kunci lain</p>
-                </div>
-            `;
-        }
-    }
 }
 
 // ==================== NOTIFICATION SYSTEM ====================
@@ -1056,7 +915,6 @@ function showNotification(message, type = 'info', duration = 5000) {
     
     container.appendChild(notification);
     
-    // Auto remove if duration is specified
     if (duration > 0) {
         setTimeout(() => removeNotification(id), duration);
     }
@@ -1078,54 +936,18 @@ function removeNotification(id) {
 
 // ==================== VIDEO PLAYER ====================
 function playVideoPreview(videoUrl) {
-    if (!videoUrl || videoUrl === '#') {
+    if (!videoUrl) {
         showNotification('Tidak dapat memutar video preview', 'error');
         return;
     }
     
-    const popup = document.getElementById('videoPopup');
-    const video = document.getElementById('popupVideo');
-    
-    if (!popup || !video) return;
-    
-    video.src = videoUrl;
-    popup.style.display = 'flex';
-    
-    // Add close button listener
-    const closeBtn = popup.querySelector('.close-popup');
-    if (closeBtn) {
-        closeBtn.onclick = closeVideoPopup;
-    }
-    
-    // Close on background click
-    popup.onclick = (e) => {
-        if (e.target === popup) {
-            closeVideoPopup();
-        }
-    };
-}
-
-function closeVideoPopup() {
-    const popup = document.getElementById('videoPopup');
-    const video = document.getElementById('popupVideo');
-    
-    if (!popup || !video) return;
-    
-    video.pause();
-    video.src = '';
-    popup.style.display = 'none';
+    window.open(videoUrl, '_blank');
 }
 
 // ==================== DOWNLOAD SYSTEM ====================
 async function downloadFile(url, type, filename) {
-    if (!url || url === '#' || !currentVideoData) {
-        showNotification('Download simulasi berhasil! (Dalam implementasi nyata akan mendownload file)', 'success');
-        return;
-    }
-    
     console.log(`⬇️ Starting download: ${filename}`);
     
-    // Show progress section
     const progressSection = document.getElementById('downloadProgress');
     const progressFill = document.getElementById('progressFill');
     const progressText = document.getElementById('progressText');
@@ -1138,23 +960,24 @@ async function downloadFile(url, type, filename) {
     progressSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     
     try {
-        // Simulate progress for better UX
         simulateProgress(progressFill, progressText);
         
-        // Simulate download
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.target = '_blank';
         
-        // Complete progress
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
         progressFill.style.width = '100%';
-        progressText.innerHTML = '<span class="text-success"><i class="fas fa-check"></i> Download selesai!</span>';
+        progressText.innerHTML = '<span class="text-success"><i class="fas fa-check"></i> Download dimulai!</span>';
         
-        // Update download count
         updateDownloadCount();
+        showNotification('Download berhasil dimulai!', 'success');
         
-        // Success notification
-        showNotification(`Berhasil mendownload ${type === 'audio' ? 'audio' : 'video'}!`, 'success');
-        
-        // Hide progress after delay
         setTimeout(() => {
             progressSection.style.display = 'none';
         }, 3000);
@@ -1165,7 +988,7 @@ async function downloadFile(url, type, filename) {
         progressFill.style.width = '0%';
         progressText.innerHTML = '<span class="text-error"><i class="fas fa-times"></i> Download gagal</span>';
         
-        showNotification(`Download gagal: ${error.message}`, 'error');
+        showNotification('Download gagal', 'error');
         
         setTimeout(() => {
             progressSection.style.display = 'none';
@@ -1201,7 +1024,6 @@ function updateDownloadCount() {
     const current = parseInt(localStorage.getItem('downloadCount') || '0');
     localStorage.setItem('downloadCount', (current + 1).toString());
     
-    // Update UI if on dashboard
     const countElement = document.getElementById('downloadCount');
     if (countElement) {
         countElement.textContent = current + 1;
@@ -1210,14 +1032,11 @@ function updateDownloadCount() {
 
 // ==================== API TEST FUNCTIONS ====================
 async function testAllAPIs() {
-    console.log('🧪 Testing all APIs...');
-    
     showNotification('Testing semua API...', 'info', 0);
     
-    const platforms = ['instagram', 'tiktok', 'youtube', 'facebook'];
+    const platforms = CONFIG.PLATFORMS;
     let results = [];
     
-    // Show testing UI
     const container = document.getElementById('statusContainer');
     if (container) {
         container.innerHTML = `
@@ -1234,7 +1053,6 @@ async function testAllAPIs() {
                     <div id="apiTestResults" style="display: none;">
                         <h4 style="margin-bottom: 20px; color: var(--text-color);">Hasil Testing:</h4>
                         <div class="tools-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
-                            <!-- Results will be populated here -->
                         </div>
                     </div>
                     
@@ -1248,15 +1066,12 @@ async function testAllAPIs() {
         `;
     }
     
-    // Simulate API testing
     for (let i = 0; i < platforms.length; i++) {
         const platform = platforms[i];
         
         try {
-            // Simulate API test delay
             await new Promise(resolve => setTimeout(resolve, 1000));
             
-            // Simulate success (random success 90% of the time)
             const success = Math.random() > 0.1;
             
             results.push({
@@ -1265,19 +1080,15 @@ async function testAllAPIs() {
                 message: success ? 'API berfungsi' : 'API timeout'
             });
             
-            // Update progress
-            console.log(`✅ ${platform}: ${success ? 'OK' : 'ERROR'}`);
-            
         } catch (error) {
             results.push({
                 platform: platform,
                 status: 'error',
-                message: error.message || 'Connection failed'
+                message: 'Connection failed'
             });
         }
     }
     
-    // Show results
     if (container) {
         const resultsContainer = container.querySelector('#apiTestResults');
         if (resultsContainer) {
@@ -1303,14 +1114,12 @@ async function testAllAPIs() {
             
             resultsContainer.querySelector('.tools-grid').innerHTML = resultsHTML;
             
-            // Update main content
             container.querySelector('.loading-spinner').style.display = 'none';
             container.querySelector('h3').textContent = 'Testing Selesai!';
             container.querySelector('p').textContent = 'Hasil testing semua API:';
         }
     }
     
-    // Show final notification
     const successCount = results.filter(r => r.status === 'success').length;
     const totalCount = results.length;
     
@@ -1323,27 +1132,6 @@ async function testAllAPIs() {
     }
 }
 
-function checkServerStatus() {
-    // Update server status periodically
-    setInterval(testAPIStatus, 60000); // Every minute
-}
-
-async function testAPIStatus() {
-    try {
-        // Simple API status check
-        const response = await fetch('https://httpbin.org/get', {
-            method: 'GET',
-            mode: 'no-cors',
-            cache: 'no-cache'
-        });
-        
-        return true;
-    } catch (error) {
-        console.log('⚠️ API status check skipped');
-        return false;
-    }
-}
-
 // ==================== EXPORT FUNCTIONS ====================
 window.loadToolPage = loadToolPage;
 window.loadDashboard = loadDashboard;
@@ -1353,7 +1141,6 @@ window.loadAPIStatusPage = loadAPIStatusPage;
 window.analyzeURL = analyzeURL;
 window.downloadFile = downloadFile;
 window.playVideoPreview = playVideoPreview;
-window.closeVideoPopup = closeVideoPopup;
 window.removeNotification = removeNotification;
 window.testAllAPIs = testAllAPIs;
 window.setDownloadType = setDownloadType;
