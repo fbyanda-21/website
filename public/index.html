@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>All Sosmed Downloader||Dev fbyanxzz</title>
+    <title>All Sosmed Downloader || Dev fbyanxzz</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" href="https://files.catbox.moe/b57mhh.png" type="image/x-icon">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⬇️</text></svg>">
 </head>
 <body class="dark-theme">
     <!-- Loading Screen -->
@@ -18,16 +18,15 @@
             <div class="loading-spinner"></div>
             <h2>Memuat Downloader Pro</h2>
             <p>Menyiapkan semua fitur untuk Anda...</p>
-            <h4>© Created By Fbyanxzz_</h4>
         </div>
     </div>
 
     <!-- Header dengan Navigasi -->
     <header class="main-header">
         <div class="header-container">
-            <div class="logo">
+            <div class="logo" onclick="loadDashboard()">
                 <i class="fas fa-download"></i>
-                <h1>Smd_<span class="gradient-text">DL</span></span></h1>
+                <h1>Smd_<span class="gradient-text">DL</span></h1>
             </div>
             
             <nav class="main-nav" id="mainNav">
@@ -86,7 +85,7 @@
                 <!-- Status API content akan dimuat dinamis -->
             </div>
             
-            <!-- Tool Container (untuk ketika tool dipilih) -->
+            <!-- Tool Container -->
             <div class="tool-container" id="toolContainer" style="display: none;">
                 <!-- Tool content akan dimuat dinamis -->
             </div>
@@ -110,10 +109,10 @@
                 <div class="footer-section">
                     <h4>Platform</h4>
                     <ul class="footer-links">
-                        <li><a href="https://www.instagram.com/fbyan_nnd21?igsh=N21yamdtcXQzZDUz" onclick="loadToolPage('instagram')"><i class="fab fa-instagram"></i> Instagram</a></li>
-                        <li><a href="https://www.tiktok.com/@fbyanxzz?_r=1&_t=ZS-92ZMQUo2wtA" onclick="loadToolPage('tiktok')"><i class="fab fa-tiktok"></i> TikTok</a></li>
-                        <li><a href="https://youtube.com/@fubiannanuda?si=lNILGGawIf0o5dFa" onclick="loadToolPage('youtube')"><i class="fab fa-youtube"></i> YouTube</a></li>
-                        <li><a href="https://www.facebook.com/share/1AJ1SGjmYZ/" onclick="loadToolPage('facebook')"><i class="fab fa-facebook"></i> Facebook</a></li>
+                        <li><a href="#" onclick="loadToolPage('instagram')"><i class="fab fa-instagram"></i> Instagram</a></li>
+                        <li><a href="#" onclick="loadToolPage('tiktok')"><i class="fab fa-tiktok"></i> TikTok</a></li>
+                        <li><a href="#" onclick="loadToolPage('youtube')"><i class="fab fa-youtube"></i> YouTube</a></li>
+                        <li><a href="#" onclick="loadToolPage('facebook')"><i class="fab fa-facebook"></i> Facebook</a></li>
                     </ul>
                 </div>
                 
@@ -131,8 +130,8 @@
                     <h4>Kontak</h4>
                     <ul class="footer-contact">
                         <li><i class="fas fa-envelope"></i> fubiannanuda@gmail.com</li>
-                        <li><i class="fas fa-globe"></i> https://fbyanxzz-smddl.vercel.app</li>
-                        <li><i class="fas fa-map-marker-alt"></i> Wanguk, Indonesia</li>
+                        <li><i class="fas fa-globe"></i> smd-dl.vercel.app</li>
+                        <li><i class="fas fa-map-marker-alt"></i> Indonesia</li>
                     </ul>
                 </div>
             </div>
@@ -142,18 +141,6 @@
             </div>
         </div>
     </footer>
-
-    <!-- Video Popup -->
-    <div id="videoPopup" class="video-popup" style="display: none;">
-        <div class="popup-content">
-            <button class="close-popup">
-                <i class="fas fa-times"></i>
-            </button>
-            <video controls id="popupVideo">
-                Your browser does not support the video tag.
-            </video>
-        </div>
-    </div>
 
     <!-- Notification Container -->
     <div class="notification-container" id="notificationContainer"></div>
@@ -165,4 +152,4 @@
 
     <script src="script.js"></script>
 </body>
-                    </html>
+    </html>
