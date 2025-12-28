@@ -1,23 +1,27 @@
 {
-  "functions": {
-    "api/*.js": {
-      "maxDuration": 30,
-      "memory": 1024,
-      "runtime": "nodejs18.x"
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/download.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "*.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "public/**/*",
+      "use": "@vercel/static"
     }
-  },
-  "rewrites": [
+  ],
+  "routes": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
+      "src": "/api/(.*)",
+      "dest": "/api/download.js"
     },
     {
-      "source": "/(.*)",
-      "destination": "/public/$1"
-    },
-    {
-      "source": "/",
-      "destination": "/public/index.html"
+      "src": "/(.*)",
+      "dest": "/$1"
     }
   ],
   "headers": [
