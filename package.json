@@ -1,14 +1,16 @@
 {
   "name": "smd-dl",
-  "version": "2.1.0",
-  "description": "Social Media Downloader - Download video from Instagram, TikTok, YouTube, Facebook",
+  "version": "2.2.0",
+  "description": "Social Media Downloader - Download video from Instagram, TikTok, YouTube, Facebook without watermark",
   "main": "api/download.js",
   "type": "module",
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "dev": "echo 'No dev server needed'"
+    "dev": "echo 'Website siap digunakan'",
+    "start": "echo 'Website berjalan di Vercel'",
+    "deploy": "echo 'Deploy ke Vercel otomatis dari GitHub'"
   },
   "keywords": [
     "downloader",
@@ -16,8 +18,14 @@
     "tiktok",
     "youtube",
     "facebook",
-    "video-downloader"
+    "video-downloader",
+    "social-media"
   ],
   "author": "fbyanxzz",
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fbyanda_21/smd-dl"
+  },
+  "homepage": "https://smd-dl.vercel.app"
 }
