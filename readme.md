@@ -31,10 +31,13 @@ Ganti API key di file `api/download.php`:
 ```php
 define('RAPIDAPI_KEY', 'API_KEY_ANDA');
 
-downloader-pro/
-├── index.html          # Halaman utama
-├── style.css          # Stylesheet
-├── script.js          # JavaScript utama
+smd-dl/
+├── public/
+│   ├── index.html
+│   ├── style.css
+│   └── script.js
 ├── api/
-│   └── download.php   # Backend proxy
-└── README.md          # Dokumentasi
+│   └── download.js
+├── package.json
+├── vercel.json
+└── README.md
