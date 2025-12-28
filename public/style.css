@@ -143,10 +143,10 @@ body {
     display: flex;
     background: var(--card-bg);
     border-radius: 15px;
-    padding: 8px;
-    gap: 2px;
+    padding: 6px;
+    gap: 0px;
     border: 2px solid var(--border-color);
-    margin: 0 20px;
+    margin: 20px;
     min-width: 400px;
     order: 3;
     width: 100%;
@@ -159,7 +159,7 @@ body {
     align-items: center;
     justify-content: center;
     gap: 0px;
-    padding: 20px;
+    padding: 10px;
     text-decoration: none;
     color: var(--text-secondary);
     border-radius: 12px;
