@@ -1,0 +1,23 @@
+{
+  "name": "smd-dl",
+  "version": "2.1.0",
+  "description": "Social Media Downloader - Download video from Instagram, TikTok, YouTube, Facebook",
+  "main": "api/download.js",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "echo 'No dev server needed'"
+  },
+  "keywords": [
+    "downloader",
+    "instagram",
+    "tiktok",
+    "youtube",
+    "facebook",
+    "video-downloader"
+  ],
+  "author": "fbyanxzz",
+  "license": "MIT"
+}
