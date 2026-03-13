@@ -1,4 +1,4 @@
-const { http } = require('../../utils/http');
+const fetch = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
 
 function createYouTubeError(message, code = 'YOUTUBE_ERROR', status = 400) {
   const err = new Error(message);
@@ -8,132 +8,87 @@ function createYouTubeError(message, code = 'YOUTUBE_ERROR', status = 400) {
   return err;
 }
 
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
+function parseWantedHeight(quality) {
+  if (!quality) return 0;
+  const m = String(quality).toLowerCase().match(/(\d{3,4})/);
+  return m ? Number(m[1]) : 0;
 }
 
-const SaveNow = {
-  api: 'https://p.savenow.to',
-  key: process.env.SAVENOW_API_KEY || '',
-  async poll(progressUrl, limit = 40) {
-    for (let i = 0; i < limit; i++) {
-      try {
-        const { data } = await http.get(progressUrl);
-        if (data && data.success === 1 && data.download_url) return data;
-        if (data && data.success === -1) break;
-      } catch (e) {
-        // ignore
-      }
-      await sleep(2500);
-    }
-    return null;
-  }
-};
+function pickBestVideo(medias, wantedHeight) {
+  const candidates = medias
+    .filter((m) => m && m.type === 'video' && m.ext === 'mp4' && m.url)
+    .map((m) => ({
+      url: m.url,
+      quality: m.quality || '',
+      height: Number(m.height || 0),
+      bitrate: Number(m.bitrate || 0),
+      ext: m.ext || 'mp4'
+    }));
 
-function normalizeQuality(q) {
-  if (!q) return '720';
-  const s = String(q).toLowerCase().trim();
-  const m = s.match(/(\d{3,4})/);
-  return m ? m[1] : '720';
+  if (!candidates.length) return null;
+
+  const sorted = [...candidates].sort((a, b) => {
+    if (b.height !== a.height) return b.height - a.height;
+    return b.bitrate - a.bitrate;
+  });
+
+  if (!wantedHeight) return sorted[0];
+
+  const underOrEqual = sorted.filter((v) => v.height && v.height <= wantedHeight);
+  return underOrEqual[0] || sorted[0];
 }
 
-async function ytdlv1(url, type) {
-  try {
-    const endpoint =
-      type === 'audio'
-        ? `https://ytdlpyton.nvlgroup.my.id/download/audio?url=${encodeURIComponent(url)}&mode=url`
-        : `https://ytdlpyton.nvlgroup.my.id/download/?url=${encodeURIComponent(url)}&resolution=${encodeURIComponent(type)}&mode=url`;
-    const { data } = await http.get(endpoint);
-    if (!data || !data.download_url) return { ok: false };
+function pickBestAudio(medias) {
+  const byBitrate = (a, b) => Number(b.bitrate || 0) - Number(a.bitrate || 0);
+  const opus = medias
+    .filter((m) => m && m.type === 'audio' && m.ext === 'opus' && m.url)
+    .sort(byBitrate)[0];
+  if (opus) {
     return {
-      ok: true,
-      provider: 'ytdlpyton',
-      title: data.title || 'YouTube Media',
-      download_url: data.download_url
+      url: opus.url,
+      quality: opus.label || '',
+      ext: opus.ext || 'opus'
     };
-  } catch (e) {
-    return { ok: false };
   }
+  const m4a = medias
+    .filter((m) => m && m.type === 'audio' && m.ext === 'm4a' && m.url)
+    .sort(byBitrate)[0];
+  if (!m4a) return null;
+  return {
+    url: m4a.url,
+    quality: m4a.label || '',
+    ext: m4a.ext || 'm4a'
+  };
 }
 
-async function ytdlv2(url, type) {
-  try {
-    const format = type === 'audio' ? 'mp3' : 'mp4';
-    const { data } = await http.get(
-      `https://api.nekolabs.my.id/downloader/youtube/v1?url=${encodeURIComponent(url)}&format=${format}`
-    );
-    if (data && data.success && data.result) {
-      return {
-        ok: true,
-        provider: 'nekolabs',
-        title: data.result.title || 'YouTube Media',
-        download_url: data.result.downloadUrl
-      };
-    }
-    return { ok: false };
-  } catch (e) {
-    return { ok: false };
+async function cliptoYouTube(url) {
+  const payload = JSON.stringify({ url });
+  const res = await fetch('https://www.clipto.com/api/youtube', {
+    method: 'POST',
+    headers: {
+      'User-Agent':
+        'Mozilla/5.0 (Linux; Android 15; 23124RA7EO Build/AQ3A.240829.003) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.7444.174 Mobile Safari/537.36',
+      Accept: 'application/json, text/plain, */*',
+      'Content-Type': 'application/json',
+      Origin: 'https://www.clipto.com',
+      Referer: 'https://www.clipto.com/id/media-downloader/youtube-downloader',
+      'X-Requested-With': 'mark.via.gp',
+      Cookie:
+        'NEXT_LOCALE=id; traffic-source=stripe-web-ytd-seo-ytd; traffic-history=seo; merge-video-api=1; vd-down-app=a'
+    },
+    body: payload
+  });
+
+  if (!res.ok) {
+    throw createYouTubeError(`Provider Clipto error (HTTP ${res.status}).`, 'YOUTUBE_UPSTREAM', 502);
   }
-}
 
-async function ytdlv3(url, resolution) {
-  try {
-    const { data } = await http.get(
-      `https://anabot.my.id/api/download/ytmp4?url=${encodeURIComponent(url)}&quality=${encodeURIComponent(
-        resolution
-      )}&apikey=freeApikey`
-    );
-    const u = data?.data?.result?.urls;
-    const title = data?.data?.result?.metadata?.title;
-    if (!data?.success || !u) return { ok: false };
-    return {
-      ok: true,
-      provider: 'anabot',
-      title: title || 'YouTube Video',
-      download_url: u
-    };
-  } catch (e) {
-    return { ok: false };
+  const result = await res.json().catch(() => null);
+  if (!result || !Array.isArray(result.medias)) {
+    throw createYouTubeError('Media tidak ditemukan.', 'YOUTUBE_EMPTY', 404);
   }
-}
 
-async function ytdlv4(url, res) {
-  try {
-    if (!SaveNow.key) return { ok: false };
-    const format = res === 'audio' ? 'mp3' : String(res);
-    const { data: init } = await http.get(`${SaveNow.api}/ajax/download.php`, {
-      params: { copyright: 0, format, url, api: SaveNow.key }
-    });
-    if (!init || !init.success || !init.progress_url) return { ok: false };
-    const result = await SaveNow.poll(init.progress_url);
-    if (!result || !result.download_url) return { ok: false };
-    return {
-      ok: true,
-      provider: 'savenow',
-      title: init.info?.title || 'YouTube Media',
-      download_url: result.download_url
-    };
-  } catch (e) {
-    return { ok: false };
-  }
-}
-
-async function resolveOne(url, kind, quality) {
-  const q = normalizeQuality(quality);
-  const type = kind === 'audio' ? 'audio' : q;
-
-  const fns = [
-    () => ytdlv1(url, type),
-    () => (kind === 'audio' ? ytdlv2(url, 'audio') : ytdlv2(url, 'video')),
-    () => (kind === 'audio' ? Promise.resolve({ ok: false }) : ytdlv3(url, q)),
-    () => ytdlv4(url, kind === 'audio' ? 'audio' : q)
-  ];
-
-  for (const fn of fns) {
-    const r = await fn();
-    if (r && r.ok && r.download_url) return r;
-  }
-  return null;
+  return result;
 }
 
 async function downloadYouTube(url, opts = {}) {
@@ -144,25 +99,28 @@ async function downloadYouTube(url, opts = {}) {
     throw createYouTubeError('URL YouTube tidak valid.', 'INVALID_URL');
   }
 
-  const quality = opts.quality;
-  const [videoRes, audioRes] = await Promise.all([
-    resolveOne(url, 'video', quality),
-    resolveOne(url, 'audio', quality)
-  ]);
+  const quality = String(opts.quality || '').trim();
+  const wantedHeight = parseWantedHeight(quality);
 
-  if (!videoRes && !audioRes) {
-    throw createYouTubeError('Gagal memproses YouTube (semua provider gagal).', 'YOUTUBE_DOWNSTREAM', 502);
+  const result = await cliptoYouTube(url);
+  const medias = result.medias;
+
+  const video = pickBestVideo(medias, wantedHeight);
+  const audio = pickBestAudio(medias);
+
+  if (!video && !audio) {
+    throw createYouTubeError('Media tidak ditemukan.', 'YOUTUBE_EMPTY', 404);
   }
 
   return {
-    title: videoRes?.title || audioRes?.title || 'YouTube Media',
-    video: videoRes?.download_url || '',
-    music: audioRes?.download_url || '',
-    providers: {
-      video: videoRes?.provider || '',
-      audio: audioRes?.provider || ''
+    title: result.title || 'YouTube Media',
+    video: video?.url || '',
+    music: audio?.url || '',
+    selected: {
+      video: video ? { quality: video.quality, ext: video.ext, height: video.height } : null,
+      audio: audio ? { quality: audio.quality, ext: audio.ext } : null
     },
-    quality: normalizeQuality(quality)
+    provider: 'clipto'
   };
 }
 
