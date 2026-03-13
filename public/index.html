@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="api-base" content="https://fbyanxzz-smddl.vercel.app" />
     <title>yanz_DL</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -23,7 +24,7 @@
         <div class="sidebar-header">
           <div class="logo-container" aria-hidden="true">
             <div class="logo-ring"></div>
-            <img src="https://files.catbox.moe/b57mhh.png" class="logo" alt="yanz_DL" />
+            <img src="/assets/img/logo.jpg" class="logo" alt="yanz_DL" />
           </div>
           <div class="app-title">yanz_DL</div>
           <div class="access-info" id="routeSubtitle">Downloader Tools</div>
@@ -32,6 +33,7 @@
         <nav class="nav-menu" aria-label="Navigasi">
           <a class="nav-link" href="/dashboard" data-link><i class="fas fa-tachometer-alt"></i>Dashboard</a>
           <a class="nav-link" href="/qr-generator" data-link><i class="fas fa-qrcode"></i>QR Generator</a>
+          <a class="nav-link" href="/music" data-link><i class="fas fa-music"></i>Music Search</a>
           <div class="nav-sep"></div>
           <a class="nav-link" href="/tiktok" data-link><i class="fab fa-tiktok"></i>TikTok</a>
           <a class="nav-link" href="/instagram" data-link><i class="fab fa-instagram"></i>Instagram</a>
@@ -52,7 +54,7 @@
           <div class="header-left">
             <div class="main-logo-container" aria-hidden="true">
               <div class="main-logo-ring"></div>
-              <img src="https://files.catbox.moe/b57mhh.png" class="main-logo" alt="" />
+              <img src="/assets/img/logo.jpg" class="main-logo" alt="" />
             </div>
             <div>
               <div class="main-app-title">yanz_DL</div>
@@ -71,19 +73,33 @@
       </main>
 
       <div class="music-dock" id="musicDock" role="region" aria-label="Background music">
-        <button class="dock-btn" id="musicToggle" aria-label="Play/Pause">
-          <i class="fas fa-play"></i>
-        </button>
+        <div class="dock-controls">
+          <button class="dock-btn" id="musicPrev" aria-label="Prev track" title="Prev">
+            <i class="fas fa-backward"></i>
+          </button>
+          <button class="dock-btn" id="musicToggle" aria-label="Play/Pause" title="Play/Pause">
+            <i class="fas fa-play"></i>
+          </button>
+          <button class="dock-btn" id="musicNext" aria-label="Next track" title="Next">
+            <i class="fas fa-forward"></i>
+          </button>
+        </div>
+
         <div class="dock-info">
-          <div class="dock-title">Background Music</div>
+          <div class="dock-title" id="musicTitle">Music</div>
           <div class="dock-subtitle" id="musicHint">Tap untuk mulai</div>
         </div>
+
+        <select class="dock-select" id="musicTrack" aria-label="Pilih lagu"></select>
+
+        <button class="dock-btn" id="musicDownload" aria-label="Download track" title="Download">
+          <i class="fas fa-download"></i>
+        </button>
+
         <input class="dock-range" id="musicVolume" type="range" min="0" max="1" step="0.01" aria-label="Volume" />
       </div>
 
-      <audio id="bg-music" loop preload="none">
-        <source src="https://files.catbox.moe/6ihypc.mp3" type="audio/mpeg" />
-      </audio>
+      <audio id="bg-music" preload="none"></audio>
     </div>
   </body>
 </html>

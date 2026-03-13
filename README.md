@@ -19,10 +19,34 @@ Checklist
 - Node.js 18+ (disarankan)
 - PM2 (untuk deploy proses)
 
+## Env
+- Copy `.env.example` -> `.env`
+- Isi value yang dibutuhkan
+
 ## Install
 ```bash
 npm install
 ```
+
+## Download music + logo assets
+```bash
+npm run download:assets
+```
+
+Nama file music (lokal)
+- `public/assets/music/01-death-bed.mp3`
+- `public/assets/music/02-lemon-tree.mp3`
+- `public/assets/music/03-surrender.mp3`
+- `public/assets/music/04-past-lives.mp3`
+- `public/assets/music/05-play-date.mp3`
+- `public/assets/music/06-trouble-is-a-friend.mp3`
+- `public/assets/music/07-rude.mp3`
+- `public/assets/music/08-love-story-ts.mp3`
+- `public/assets/music/09-love-story-indila.mp3`
+- `public/assets/music/10-dusk-till-dawn.mp3`
+- `public/assets/music/11-somewhere-only-we-know.mp3`
+- `public/assets/music/12-off-my-face.mp3`
+- `public/assets/music/13-dandelions.mp3`
 
 ## Run (dev)
 ```bash
@@ -83,3 +107,5 @@ Error shape
 - Rate limit:
   - `/api/v1/*`: 120 req/menit
   - `/api/v1/download/*`: 30 req/menit
+- Playlist music diatur di `public/assets/app.js` (dock kanan bawah).
+- Spotify search/preview perlu `SPOTIFY_CLIENT_ID` dan `SPOTIFY_CLIENT_SECRET` (lihat `.env.example`).

@@ -1,5 +1,7 @@
 const path = require('path');
 
+require('dotenv').config();
+
 const compression = require('compression');
 const express = require('express');
 const rateLimit = require('express-rate-limit');
@@ -45,7 +47,9 @@ app.use(
     lastModified: true,
     maxAge: '1h',
     setHeaders(res, filePath) {
-      if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+      const musicDir = `${path.sep}assets${path.sep}music${path.sep}`;
+      const imgDir = `${path.sep}assets${path.sep}img${path.sep}`;
+      if (filePath.includes(musicDir) || filePath.includes(imgDir)) {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       }
     }

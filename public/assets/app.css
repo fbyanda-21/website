@@ -525,7 +525,7 @@ body {
   bottom: 14px;
   z-index: 1003;
   display: grid;
-  grid-template-columns: auto 1fr 120px;
+  grid-template-columns: auto 1fr minmax(160px, 220px) auto 120px;
   gap: 10px;
   align-items: center;
   padding: 10px 12px;
@@ -534,6 +534,12 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow: var(--shadow);
   backdrop-filter: blur(16px);
+}
+
+.dock-controls {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .dock-btn {
@@ -565,6 +571,21 @@ body {
 
 .dock-range {
   width: 100%;
+}
+
+.dock-select {
+  width: 100%;
+  padding: 10px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
+  outline: none;
+}
+
+.dock-select:focus {
+  border-color: rgba(255, 0, 0, 0.6);
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.16);
 }
 
 @keyframes spin {
@@ -618,5 +639,20 @@ body {
   }
   .dock-range {
     display: none;
+  }
+  .dock-select {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .music-dock {
+    grid-template-columns: auto 1fr auto;
+  }
+  .dock-select {
+    grid-column: 1 / -1;
+  }
+  .dock-range {
+    grid-column: 1 / -1;
   }
 }
