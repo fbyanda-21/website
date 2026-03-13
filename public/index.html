@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>yanz_DL</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js" defer></script>
+    <link href="/assets/app.css" rel="stylesheet" />
+    <script src="/assets/app.js" defer></script>
+  </head>
+  <body>
+    <div class="app" id="app">
+      <button class="menu-toggle" id="menuToggle" aria-label="Buka menu">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <div class="logo-container" aria-hidden="true">
+            <div class="logo-ring"></div>
+            <img src="https://files.catbox.moe/b57mhh.png" class="logo" alt="yanz_DL" />
+          </div>
+          <div class="app-title">yanz_DL</div>
+          <div class="access-info" id="routeSubtitle">Downloader Tools</div>
+        </div>
+
+        <nav class="nav-menu" aria-label="Navigasi">
+          <a class="nav-link" href="/dashboard" data-link><i class="fas fa-tachometer-alt"></i>Dashboard</a>
+          <a class="nav-link" href="/qr-generator" data-link><i class="fas fa-qrcode"></i>QR Generator</a>
+          <div class="nav-sep"></div>
+          <a class="nav-link" href="/tiktok" data-link><i class="fab fa-tiktok"></i>TikTok</a>
+          <a class="nav-link" href="/instagram" data-link><i class="fab fa-instagram"></i>Instagram</a>
+          <a class="nav-link" href="/youtube" data-link><i class="fab fa-youtube"></i>YouTube</a>
+          <a class="nav-link" href="/facebook" data-link><i class="fab fa-facebook"></i>Facebook</a>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="muted">
+            <div class="tiny">API: <span id="apiStatus">checking...</span></div>
+            <div class="tiny">Jam: <span id="currentTime">--:--:--</span></div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="header">
+          <div class="header-left">
+            <div class="main-logo-container" aria-hidden="true">
+              <div class="main-logo-ring"></div>
+              <img src="https://files.catbox.moe/b57mhh.png" class="main-logo" alt="" />
+            </div>
+            <div>
+              <div class="main-app-title">yanz_DL</div>
+              <div class="main-access-info" id="routeTitle">Dashboard</div>
+            </div>
+          </div>
+
+          <div class="header-right">
+            <a class="ghost-btn" href="https://github.com/" target="_blank" rel="noreferrer"><i class="fab fa-github"></i><span>GitHub</span></a>
+          </div>
+        </header>
+
+        <section class="view" id="view"></section>
+
+        <footer class="footer">&copy; 2026 - fbyanxzz. All rights reserved.</footer>
+      </main>
+
+      <div class="music-dock" id="musicDock" role="region" aria-label="Background music">
+        <button class="dock-btn" id="musicToggle" aria-label="Play/Pause">
+          <i class="fas fa-play"></i>
+        </button>
+        <div class="dock-info">
+          <div class="dock-title">Background Music</div>
+          <div class="dock-subtitle" id="musicHint">Tap untuk mulai</div>
+        </div>
+        <input class="dock-range" id="musicVolume" type="range" min="0" max="1" step="0.01" aria-label="Volume" />
+      </div>
+
+      <audio id="bg-music" loop preload="none">
+        <source src="https://files.catbox.moe/6ihypc.mp3" type="audio/mpeg" />
+      </audio>
+    </div>
+  </body>
+</html>
