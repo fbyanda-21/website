@@ -19,10 +19,6 @@ Checklist
 - Node.js 18+ (disarankan)
 - PM2 (untuk deploy proses)
 
-## Env
-- Copy `.env.example` -> `.env`
-- Isi value yang dibutuhkan
-
 ## Install
 ```bash
 npm install
@@ -64,6 +60,11 @@ pm2 start ecosystem.config.js
 pm2 status
 pm2 logs yanzz-dl
 ```
+
+## Deploy (Vercel)
+- Frontend: `public/` (served as static)
+- API: `api/v1/[...all].js` (Serverless Function)
+- SPA routes (contoh `/tiktok`) di-handle oleh `vercel.json` rewrite ke `public/index.html`
 
 Port
 - Default: `8676`
@@ -108,4 +109,4 @@ Error shape
   - `/api/v1/*`: 120 req/menit
   - `/api/v1/download/*`: 30 req/menit
 - Playlist music diatur di `public/assets/app.js` (dock kanan bawah).
-- Spotify search/preview perlu `SPOTIFY_CLIENT_ID` dan `SPOTIFY_CLIENT_SECRET` (lihat `.env.example`).
+- Spotify search/preview pakai Spotify Web API (preview_url).

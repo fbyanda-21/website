@@ -22,15 +22,9 @@ function formatDurationFromMs(ms) {
 }
 
 function getSpotifyCredentials() {
-  const id = String(process.env.SPOTIFY_CLIENT_ID || '').trim();
-  const secret = String(process.env.SPOTIFY_CLIENT_SECRET || '').trim();
-  if (!id || !secret) {
-    throw spotifyError(
-      'Spotify belum dikonfigurasi (SPOTIFY_CLIENT_ID/SECRET).',
-      'SPOTIFY_NOT_CONFIGURED',
-      503
-    );
-  }
+  // Hardcoded credentials (as requested). Keep in mind this will be public if pushed to a repo.
+  const id = 'eafbc7b558274975be58df0026f22260';
+  const secret = '79f20d1353954c968fda33a00aba5235';
   return { id, secret };
 }
 
