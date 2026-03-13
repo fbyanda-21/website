@@ -2,10 +2,14 @@ const path = require('path');
 
 const compression = require('compression');
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 
 const apiRouter = require('./routes/api');
 
 const app = express();
+
+// If behind a reverse proxy (nginx/vercel), this makes req.ip use X-Forwarded-For.
+app.set('trust proxy', 1);
 
 app.disable('x-powered-by');
 app.use(compression());
@@ -16,7 +20,23 @@ app.get('/health', (req, res) => {
   res.json({ ok: true, service: 'yanzz-dl', time: new Date().toISOString() });
 });
 
-app.use('/api/v1', apiRouter);
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler(req, res) {
+    res.status(429).json({
+      ok: false,
+      error: {
+        code: 'RATE_LIMITED',
+        message: 'Terlalu banyak request, coba lagi nanti.'
+      }
+    });
+  }
+});
+
+app.use('/api/v1', apiLimiter, apiRouter);
 
 const publicDir = path.join(__dirname, '..', 'public');
 app.use(

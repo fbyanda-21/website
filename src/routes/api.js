@@ -1,4 +1,5 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 
 const { sendError, sendOk } = require('../utils/respond');
 const { requireNonEmptyString, isTikTokUrl, isInstagramUrl, isFacebookUrl, isYouTubeUrl } = require('../utils/validate');
@@ -9,6 +10,18 @@ const { downloadFacebook } = require('../services/downloaders/facebook');
 const { downloadYouTube } = require('../services/downloaders/youtube');
 
 const router = express.Router();
+
+const downloadLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler(req, res) {
+    sendError(res, 429, 'RATE_LIMITED', 'Terlalu banyak request download, coba lagi nanti.');
+  }
+});
+
+router.use('/download', downloadLimiter);
 
 router.get('/health', (req, res) => {
   sendOk(res, { status: 'ok', time: new Date().toISOString() });
