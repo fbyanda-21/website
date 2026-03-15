@@ -12,8 +12,9 @@ app.use(compression());
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-// Vercel routes /api/v1/* to this handler.
+// Vercel rewrites may preserve or strip the prefix depending on config.
 app.use('/api/v1', apiRouter);
+app.use('/', apiRouter);
 
 app.use((err, req, res, next) => {
   const status = Number(err.status) || 500;
