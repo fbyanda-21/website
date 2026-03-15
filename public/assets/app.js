@@ -287,107 +287,6 @@
     { id: 'dandelions', title: 'Dandelions', artist: 'Ruth B.', url: 'https://files.catbox.moe/kwaku9.mp3' }
   ];
 
-  const miniPlayerEl = qs('#miniPlayer');
-  const audioPlayer = qs('#audioPlayer');
-  const miniPlay = qs('#miniPlay');
-  const miniPrev = qs('#miniPrev');
-  const miniNext = qs('#miniNext');
-  const miniTitle = qs('#miniTitle');
-  const miniSub = qs('#miniSub');
-  const miniEq = qs('#miniEq');
-  const nowPlayingHandle = qs('#nowPlayingHandle');
-
-  const playerState = {
-    index: 0,
-    hideTimer: null,
-    expanded: true
-  };
-
-  function currentTrack() {
-    return musicTracks[playerState.index] || musicTracks[0];
-  }
-
-  function showMini(show) {
-    if (!miniPlayerEl) return;
-    if (show) {
-      miniPlayerEl.hidden = false;
-      miniPlayerEl.classList.remove('collapsed');
-      if (nowPlayingHandle) nowPlayingHandle.hidden = true;
-      playerState.expanded = true;
-    } else {
-      miniPlayerEl.classList.add('collapsed');
-      window.setTimeout(() => {
-        miniPlayerEl.hidden = true;
-      }, 230);
-      if (nowPlayingHandle) nowPlayingHandle.hidden = false;
-      playerState.expanded = false;
-    }
-  }
-
-  function setMiniUi(playing) {
-    if (miniPlay) {
-      miniPlay.innerHTML = playing ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
-    }
-    if (miniEq) miniEq.classList.toggle('active', Boolean(playing));
-  }
-
-  function scheduleMiniAutoHide() {
-    if (!miniPlayerEl) return;
-    if (playerState.hideTimer) window.clearTimeout(playerState.hideTimer);
-    playerState.hideTimer = window.setTimeout(() => {
-      if (audioPlayer && !audioPlayer.paused) return;
-      if (!playerState.expanded) return;
-      showMini(false);
-    }, 5000);
-  }
-
-  async function playIndex(idx) {
-    playerState.index = (idx + musicTracks.length) % musicTracks.length;
-    const t = currentTrack();
-    if (miniTitle) miniTitle.textContent = t.title;
-    if (miniSub) miniSub.textContent = t.artist || '';
-    showMini(true);
-    if (!audioPlayer) return;
-
-    if (audioPlayer.src !== t.url) {
-      audioPlayer.src = t.url;
-    }
-    try {
-      await audioPlayer.play();
-      setMiniUi(true);
-      scheduleMiniAutoHide();
-    } catch (e) {
-      setMiniUi(false);
-      if (miniSub) miniSub.textContent = 'Tap untuk play';
-    }
-  }
-
-  function togglePlay() {
-    if (!audioPlayer) return;
-    if (audioPlayer.paused) {
-      audioPlayer.play().then(() => setMiniUi(true)).catch(() => setMiniUi(false));
-    } else {
-      audioPlayer.pause();
-      setMiniUi(false);
-    }
-    scheduleMiniAutoHide();
-  }
-
-  if (miniPlay) miniPlay.addEventListener('click', togglePlay);
-  if (miniPrev) miniPrev.addEventListener('click', () => playIndex(playerState.index - 1));
-  if (miniNext) miniNext.addEventListener('click', () => playIndex(playerState.index + 1));
-  if (nowPlayingHandle) {
-    nowPlayingHandle.addEventListener('click', () => {
-      showMini(true);
-      scheduleMiniAutoHide();
-    });
-  }
-  if (audioPlayer) {
-    audioPlayer.addEventListener('ended', () => playIndex(playerState.index + 1));
-    audioPlayer.addEventListener('pause', () => setMiniUi(false));
-    audioPlayer.addEventListener('play', () => setMiniUi(true));
-  }
-
   function musicView() {
     const input = el('input', { class: 'input', placeholder: 'Cari lagu (lokal)', value: '' });
     const list = el('div', { class: 'dl-grid' });
@@ -404,18 +303,8 @@
       });
 
       items.forEach((t) => {
-        const playBtn = el('a', {
-          href: '#',
-          onclick: (e) => {
-            e.preventDefault();
-            const idx = musicTracks.findIndex((x) => x.id === t.id);
-            playIndex(idx >= 0 ? idx : 0);
-          }
-        });
-        playBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
-
         list.append(
-          el('div', { class: 'dl-item' }, [
+          el('div', { class: 'dl-item', style: 'flex-wrap:wrap;align-items:stretch' }, [
             el('div', { class: 'left' }, [
               el('span', { class: 'tag', html: 'Music' }),
               el('span', {
@@ -424,7 +313,7 @@
                 html: `${escapeHtml(t.title)} - ${escapeHtml(t.artist)}`
               })
             ]),
-            playBtn
+            el('audio', { controls: 'true', preload: 'none', src: t.url })
           ])
         );
       });
@@ -435,7 +324,7 @@
 
     return el('div', { class: 'panel' }, [
       el('h2', { class: 'title', html: 'Music' }),
-      el('p', { class: 'subtitle', html: 'Library lokal untuk diputar di mini player.' }),
+      el('p', { class: 'subtitle', html: 'Library lokal dengan audio preview inline.' }),
       el('div', { class: 'form' }, [
         input,
         list

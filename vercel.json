@@ -6,6 +6,8 @@
   ],
   "routes": [
     { "src": "/api/v1/(.*)", "dest": "/api/v1/handler.js" },
+    { "src": "/spotify/(.*)", "dest": "/api/v1/handler.js" },
+    { "src": "/download/(.*)", "dest": "/api/v1/handler.js" },
     { "src": "/assets/(.*)", "dest": "/public/assets/$1" },
     { "src": "/(.*)", "dest": "/public/index.html" }
   ]
