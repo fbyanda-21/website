@@ -13,7 +13,7 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Vercel routes /api/v1/* to this handler.
-app.use('/', apiRouter);
+app.use('/api/v1', apiRouter);
 
 app.use((err, req, res, next) => {
   const status = Number(err.status) || 500;
