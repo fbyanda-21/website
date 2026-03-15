@@ -523,6 +523,14 @@
       if (v !== undefined && v !== null && String(v).trim() !== '') url.searchParams.set(k, String(v));
     });
     const res = await fetch(url.toString(), { cache: 'no-store' });
+    const contentType = String(res.headers.get('content-type') || '').toLowerCase();
+    if (!contentType.includes('application/json')) {
+      const text = await res.text().catch(() => '');
+      const hint = text && text.length ? `Non-JSON response (status ${res.status}).` : `HTTP ${res.status}`;
+      const err = new Error(hint);
+      err.code = 'API_INVALID_RESPONSE';
+      throw err;
+    }
     const json = await res.json().catch(() => null);
     if (!res.ok || !json || json.ok !== true) {
       const msg = json?.error?.message || `HTTP ${res.status}`;
