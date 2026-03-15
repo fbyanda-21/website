@@ -17,6 +17,13 @@
   box-sizing: border-box;
 }
 
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
 html,
 body {
   height: 100%;
@@ -199,6 +206,7 @@ body {
   width: 100%;
   margin-left: 0;
   padding: 86px 18px 80px;
+  overflow-x: hidden;
 }
 
 .header {
@@ -280,6 +288,9 @@ body {
 .view {
   margin-top: 14px;
   animation: appear 0.35s ease both;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .card {
@@ -287,10 +298,13 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+  max-width: 100%;
 }
 
 .card-inner {
   padding: 18px;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .hero {
@@ -317,12 +331,18 @@ body {
   font-size: 18px;
   font-weight: 700;
   margin: 0 0 8px;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .subtitle {
   margin: 0;
   color: var(--muted);
   line-height: 1.6;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .grid {
@@ -370,6 +390,7 @@ body {
 
 .input {
   width: 100%;
+  max-width: 100%;
   padding: 12px 12px;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -385,6 +406,7 @@ body {
 
 .primary-btn {
   width: 100%;
+  max-width: 100%;
   border: none;
   border-radius: 14px;
   padding: 12px 12px;
@@ -396,6 +418,8 @@ body {
   align-items: center;
   justify-content: center;
   gap: 10px;
+  flex-wrap: wrap;
+  text-align: center;
 }
 
 .primary-btn:disabled {
@@ -444,6 +468,7 @@ body {
 
 .preview {
   width: 100%;
+  max-width: 100%;
   border-radius: 14px;
   background: rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -452,7 +477,12 @@ body {
 
 .preview video {
   width: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: 55vh;
   display: block;
+  object-fit: contain;
+  background: #000;
 }
 
 .dl-grid {
