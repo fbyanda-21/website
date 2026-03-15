@@ -63,7 +63,7 @@ pm2 logs yanzz-dl
 
 ## Deploy (Vercel)
 - Frontend: `public/` (served as static)
-- API: `api/v1/[...all].js` (Serverless Function)
+- API: `api/v1/handler.js` (Serverless Function)
 - SPA routes (contoh `/tiktok`) di-handle oleh `vercel.json` rewrite ke `public/index.html`
 
 Port

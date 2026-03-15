@@ -12,10 +12,9 @@ app.use(compression());
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-// Vercel maps this file under /api/v1/*, so mount router at root.
+// Vercel routes /api/v1/* to this handler.
 app.use('/', apiRouter);
 
-// Error handler
 app.use((err, req, res, next) => {
   const status = Number(err.status) || 500;
   const code = err.code || 'INTERNAL_ERROR';
