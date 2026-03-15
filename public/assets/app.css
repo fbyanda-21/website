@@ -219,6 +219,11 @@ body {
     border-color 180ms ease;
 }
 
+/* Safety: never show handle while pill is visible */
+#activityPill:not([hidden]) + #activityHandle {
+  display: none !important;
+}
+
 .activity-handle:active {
   transform: scale(0.97);
 }

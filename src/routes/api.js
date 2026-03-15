@@ -8,8 +8,8 @@ const { downloadTikTok } = require('../services/downloaders/tiktok');
 const { downloadInstagram } = require('../services/downloaders/instagram');
 const { downloadFacebook } = require('../services/downloaders/facebook');
 const { downloadYouTube } = require('../services/downloaders/youtube');
-const { spotifySearch, spotifyDownload } = require('../services/music/spotify_downloaderize');
-const { getSpotifyOEmbedInfo } = require('../services/music/spotify_oembed');
+const { searchSpotifyTracks, getSpotifyTrackMeta } = require('../services/music/spotify_official');
+const { getSpotmateDownloadUrl } = require('../services/music/spotify_spotmate');
 
 const router = express.Router();
 
@@ -83,7 +83,7 @@ router.get('/spotify/search', async (req, res) => {
   const q = String(req.query.q || '').trim();
   const limit = String(req.query.limit || '').trim();
   try {
-    const result = await spotifySearch(q, limit);
+    const result = await searchSpotifyTracks(q, limit);
     sendOk(res, { query: result.query, total: result.total, results: result.results, provider: result.provider });
   } catch (e) {
     sendError(res, e.status || 500, e.code || 'MUSIC_ERROR', e.message || 'Gagal search music.');
@@ -93,20 +93,24 @@ router.get('/spotify/search', async (req, res) => {
 router.get('/spotify/download', async (req, res) => {
   const url = String(req.query.url || '').trim();
   try {
-    const result = await spotifyDownload(url);
-    sendOk(res, result);
+    const meta = await getSpotifyTrackMeta(url);
+    const dl = await getSpotmateDownloadUrl(url);
+
+    sendOk(res, {
+      url: dl.trackUrl,
+      title: meta.title,
+      artist: meta.artist,
+      album: meta.album,
+      duration: meta.duration,
+      thumbnail: meta.thumbnail,
+      type: 'track',
+      download: dl.downloadUrl,
+      quality: 'HQ',
+      extension: 'mp3',
+      provider: 'spotmate'
+    });
   } catch (e) {
     sendError(res, e.status || 500, e.code || 'SPOTIFY_ERROR', e.message || 'Gagal download Spotify.');
-  }
-});
-
-router.get('/spotify/info', async (req, res) => {
-  const url = String(req.query.url || '').trim();
-  try {
-    const result = await getSpotifyOEmbedInfo(url);
-    sendOk(res, result);
-  } catch (e) {
-    sendError(res, e.status || 500, e.code || 'MUSIC_ERROR', e.message || 'Gagal mengambil info Spotify.');
   }
 });
 

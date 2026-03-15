@@ -56,6 +56,10 @@
   updateClock();
 
   function getApiBase() {
+    try {
+      const override = String(window.localStorage.getItem('api-base-override') || '').trim();
+      if (override) return override.replace(/\/$/, '');
+    } catch (_) {}
     const meta = qs('meta[name="api-base"]');
     const raw = meta ? String(meta.getAttribute('content') || '').trim() : '';
     if (raw) return raw.replace(/\/$/, '');
@@ -63,12 +67,23 @@
     return '';
   }
 
-  const API_BASE = getApiBase();
+  let API_BASE = getApiBase();
+
+  function setApiBase(next) {
+    const clean = String(next || '').trim().replace(/\/$/, '');
+    API_BASE = clean;
+    try {
+      if (clean) window.localStorage.setItem('api-base-override', clean);
+      else window.localStorage.removeItem('api-base-override');
+    } catch (_) {}
+    checkApi();
+  }
 
   async function checkApi(attempt = 0) {
     apiStatusEl.textContent = 'checking...';
     try {
-      const url = (API_BASE || '') + '/api/v1/health';
+      const base = API_BASE || '';
+      const url = base + '/api/v1/health';
       const res = await fetch(url, { cache: 'no-store' });
       if (res.ok) {
         apiStatusEl.textContent = 'online';
@@ -98,11 +113,16 @@
     hideTimer: null,
     expanded: false,
     lastText: '',
-    lastKind: 'info'
+    lastKind: 'info',
+    seq: 0
   };
 
   function showActivity(text, kind, { sticky } = {}) {
     if (!activityPill || !activityText) return;
+
+    activityState.seq += 1;
+    const seq = activityState.seq;
+
     activityState.lastText = String(text || '').trim() || 'Working...';
     activityState.lastKind = kind || activityState.lastKind || 'info';
     activityText.textContent = activityState.lastText;
@@ -118,9 +138,11 @@
     if (activityState.hideTimer) window.clearTimeout(activityState.hideTimer);
     if (!sticky) {
       activityState.hideTimer = window.setTimeout(() => {
+        if (activityState.seq !== seq) return;
         if (activityState.expanded) return;
         activityPill.classList.add('shrink');
         window.setTimeout(() => {
+          if (activityState.seq !== seq) return;
           if (!activityState.expanded) {
             activityPill.hidden = true;
             if (activityHandle) {
@@ -333,13 +355,59 @@
   }
 
   function moreView() {
-    return el('div', { class: 'panel' }, [
-      el('h2', { class: 'title', html: 'More' }),
-      el('div', { class: 'actions' }, [
-        quickBtn('Facebook', 'fab fa-facebook', '/facebook'),
-        quickBtn('QR Generator', 'fas fa-qrcode', '/qr-generator'),
-        quickBtn('Music', 'fas fa-music', '/music'),
-        quickBtn('Spotify', 'fab fa-spotify', '/spotify')
+    const apiInput = el('input', {
+      class: 'input',
+      placeholder: 'API base (opsional) contoh: https://domain-kamu.com',
+      value: API_BASE || ''
+    });
+
+    const apiNote = el('p', {
+      class: 'subtitle',
+      html:
+        'Kalau Spotify 403 di Vercel, host API di server lain (VPS/Render/Railway) lalu isi base URL di sini.'
+    });
+
+    const btnSave = el(
+      'button',
+      {
+        class: 'primary-btn',
+        type: 'button',
+        onclick: () => {
+          setApiBase(apiInput.value);
+          showActivity('API base updated', 'success');
+        }
+      },
+      [el('i', { class: 'fas fa-floppy-disk' }), el('span', { html: 'Save API Base' })]
+    );
+
+    const btnClear = el(
+      'button',
+      {
+        class: 'action-btn',
+        type: 'button',
+        onclick: () => {
+          apiInput.value = '';
+          setApiBase('');
+          showActivity('API base cleared', 'success');
+        }
+      },
+      [el('i', { class: 'fas fa-eraser' }), el('span', { html: 'Reset' })]
+    );
+
+    return el('div', { class: 'grid' }, [
+      el('div', { class: 'panel' }, [
+        el('h2', { class: 'title', html: 'More' }),
+        el('div', { class: 'actions' }, [
+          quickBtn('Facebook', 'fab fa-facebook', '/facebook'),
+          quickBtn('QR Generator', 'fas fa-qrcode', '/qr-generator'),
+          quickBtn('Music', 'fas fa-music', '/music'),
+          quickBtn('Spotify', 'fab fa-spotify', '/spotify')
+        ])
+      ]),
+      el('div', { class: 'panel' }, [
+        el('div', { class: 'title', html: '<i class="fas fa-server"></i> API Base' }),
+        apiNote,
+        el('div', { class: 'form' }, [apiInput, btnSave, btnClear])
       ])
     ]);
   }
@@ -512,6 +580,10 @@
             } catch (e) {
               dlBox.innerHTML = '<div class="subtitle" style="margin:0">Gagal mengambil link download: ' + escapeHtml(e.message || 'error') + '</div>';
               dlBox.classList.add('show');
+              if (String(e.code || '') === 'UPSTREAM_FORBIDDEN') {
+                dlBox.innerHTML =
+                  '<div class="subtitle" style="margin:0">Provider memblokir IP serverless (403). Host API di server non-Vercel lalu set di More -> API Base.</div>';
+              }
               showActivity('Download failed', 'error');
             } finally {
               state.downloadBusy.delete(openUrl);
@@ -633,7 +705,16 @@
         render();
       } catch (e) {
         state.loading = false;
-        setError(e.message || 'Gagal mencari.');
+        const code = String(e.code || '').trim();
+        const msg = e.message || 'Gagal mencari.';
+        if (code === 'UPSTREAM_FORBIDDEN') {
+          setError(
+            'Provider download memblokir IP serverless (403). ' +
+              'Solusi: host API di server non-Vercel (VPS/Render/Railway) lalu set di More -> API Base.'
+          );
+        } else {
+          setError(msg);
+        }
         showActivity('Spotify search failed', 'error');
         render();
       }
