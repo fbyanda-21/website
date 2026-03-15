@@ -56,10 +56,6 @@
   updateClock();
 
   function getApiBase() {
-    try {
-      const override = String(window.localStorage.getItem('api-base-override') || '').trim();
-      if (override) return override.replace(/\/$/, '');
-    } catch (_) {}
     const meta = qs('meta[name="api-base"]');
     const raw = meta ? String(meta.getAttribute('content') || '').trim() : '';
     if (raw) return raw.replace(/\/$/, '');
@@ -67,23 +63,12 @@
     return '';
   }
 
-  let API_BASE = getApiBase();
-
-  function setApiBase(next) {
-    const clean = String(next || '').trim().replace(/\/$/, '');
-    API_BASE = clean;
-    try {
-      if (clean) window.localStorage.setItem('api-base-override', clean);
-      else window.localStorage.removeItem('api-base-override');
-    } catch (_) {}
-    checkApi();
-  }
+  const API_BASE = getApiBase();
 
   async function checkApi(attempt = 0) {
     apiStatusEl.textContent = 'checking...';
     try {
-      const base = API_BASE || '';
-      const url = base + '/api/v1/health';
+      const url = (API_BASE || '') + '/api/v1/health';
       const res = await fetch(url, { cache: 'no-store' });
       if (res.ok) {
         apiStatusEl.textContent = 'online';
@@ -213,7 +198,7 @@
       el('div', { class: 'actions' }, [
         quickBtn('Facebook', 'fab fa-facebook', '/facebook'),
         quickBtn('QR', 'fas fa-qrcode', '/qr-generator'),
-        quickBtn('Music', 'fas fa-music', '/music')
+        quickBtn('Spotify', 'fab fa-spotify', '/spotify')
       ])
     ]);
 
@@ -292,122 +277,14 @@
     ]);
   }
 
-  // Local music library (streaming)
-  const musicTracks = [
-    { id: 'death-bed', title: 'Death Bed', artist: 'Powfu', url: 'https://files.catbox.moe/spadk5.mp3' },
-    { id: 'lemon-tree', title: 'Lemon Tree', artist: 'Fools Garden', url: 'https://files.catbox.moe/l7yjkn.mp3' },
-    { id: 'surrender', title: 'Surrender', artist: 'Unknown', url: 'https://files.catbox.moe/64rrze.mp3' },
-    { id: 'past-lives', title: 'Past Lives', artist: 'Unknown', url: 'https://files.catbox.moe/rg0mtu.mp3' },
-    { id: 'play-date', title: 'Play Date', artist: 'Melanie Martinez', url: 'https://files.catbox.moe/05vn8z.mp3' },
-    { id: 'trouble-is-a-friend', title: 'Trouble Is A Friend', artist: 'Lenka', url: 'https://files.catbox.moe/fdw8o8.mp3' },
-    { id: 'rude', title: 'Rude', artist: 'MAGIC!', url: 'https://files.catbox.moe/c6gtik.mp3' },
-    { id: 'love-story-ts', title: 'Love Story (TS)', artist: 'Taylor Swift', url: 'https://files.catbox.moe/rm82lu.mp3' },
-    { id: 'love-story-indila', title: 'Love Story (Indila)', artist: 'Indila', url: 'https://files.catbox.moe/mqxmmt.mp3' },
-    { id: 'dusk-till-dawn', title: 'Dusk Till Dawn', artist: 'ZAYN', url: 'https://files.catbox.moe/ulw7i2.mp3' },
-    { id: 'somewhere-only-we-know', title: 'Somewhere Only We Know', artist: 'Keane', url: 'https://files.catbox.moe/c0fspy.mp3' },
-    { id: 'off-my-face', title: 'Off My Face', artist: 'Justin Bieber', url: 'https://files.catbox.moe/svkvc3.mp3' },
-    { id: 'dandelions', title: 'Dandelions', artist: 'Ruth B.', url: 'https://files.catbox.moe/kwaku9.mp3' }
-  ];
-
-  function musicView() {
-    const input = el('input', { class: 'input', placeholder: 'Cari lagu (lokal)', value: '' });
-    const list = el('div', { class: 'dl-grid' });
-
-    function renderList() {
-      const q = input.value.trim().toLowerCase();
-      list.innerHTML = '';
-      const items = musicTracks.filter((t) => {
-        if (!q) return true;
-        return (
-          t.title.toLowerCase().includes(q) ||
-          String(t.artist || '').toLowerCase().includes(q)
-        );
-      });
-
-      items.forEach((t) => {
-        list.append(
-          el('div', { class: 'dl-item', style: 'flex-wrap:wrap;align-items:stretch' }, [
-            el('div', { class: 'left' }, [
-              el('span', { class: 'tag', html: 'Music' }),
-              el('span', {
-                class: 'name',
-                title: `${t.title} - ${t.artist}`,
-                html: `${escapeHtml(t.title)} - ${escapeHtml(t.artist)}`
-              })
-            ]),
-            el('audio', { controls: 'true', preload: 'none', src: t.url })
-          ])
-        );
-      });
-    }
-
-    input.addEventListener('input', renderList);
-    renderList();
-
-    return el('div', { class: 'panel' }, [
-      el('h2', { class: 'title', html: 'Music' }),
-      el('p', { class: 'subtitle', html: 'Library lokal dengan audio preview inline.' }),
-      el('div', { class: 'form' }, [
-        input,
-        list
-      ])
-    ]);
-  }
-
   function moreView() {
-    const apiInput = el('input', {
-      class: 'input',
-      placeholder: 'API base (opsional) contoh: https://domain-kamu.com',
-      value: API_BASE || ''
-    });
-
-    const apiNote = el('p', {
-      class: 'subtitle',
-      html:
-        'Kalau Spotify 403 di Vercel, host API di server lain (VPS/Render/Railway) lalu isi base URL di sini.'
-    });
-
-    const btnSave = el(
-      'button',
-      {
-        class: 'primary-btn',
-        type: 'button',
-        onclick: () => {
-          setApiBase(apiInput.value);
-          showActivity('API base updated', 'success');
-        }
-      },
-      [el('i', { class: 'fas fa-floppy-disk' }), el('span', { html: 'Save API Base' })]
-    );
-
-    const btnClear = el(
-      'button',
-      {
-        class: 'action-btn',
-        type: 'button',
-        onclick: () => {
-          apiInput.value = '';
-          setApiBase('');
-          showActivity('API base cleared', 'success');
-        }
-      },
-      [el('i', { class: 'fas fa-eraser' }), el('span', { html: 'Reset' })]
-    );
-
-    return el('div', { class: 'grid' }, [
-      el('div', { class: 'panel' }, [
-        el('h2', { class: 'title', html: 'More' }),
-        el('div', { class: 'actions' }, [
-          quickBtn('Facebook', 'fab fa-facebook', '/facebook'),
-          quickBtn('QR Generator', 'fas fa-qrcode', '/qr-generator'),
-          quickBtn('Music', 'fas fa-music', '/music'),
-          quickBtn('Spotify', 'fab fa-spotify', '/spotify')
-        ])
-      ]),
-      el('div', { class: 'panel' }, [
-        el('div', { class: 'title', html: '<i class="fas fa-server"></i> API Base' }),
-        apiNote,
-        el('div', { class: 'form' }, [apiInput, btnSave, btnClear])
+    return el('div', { class: 'panel' }, [
+      el('h2', { class: 'title', html: 'More' }),
+      el('p', { class: 'subtitle', html: 'Tools tambahan.' }),
+      el('div', { class: 'actions' }, [
+        quickBtn('Spotify', 'fab fa-spotify', '/spotify'),
+        quickBtn('Facebook', 'fab fa-facebook', '/facebook'),
+        quickBtn('QR Generator', 'fas fa-qrcode', '/qr-generator')
       ])
     ]);
   }
@@ -435,10 +312,7 @@
       loading: false,
       error: '',
       results: [],
-      currentQuery: '',
-      downloadBusy: new Set(),
-      playingUrl: '',
-      playingBtn: null
+      currentQuery: ''
     };
 
     const playerAudio = new Audio();
@@ -725,8 +599,6 @@
       const openUrl = item.url || item.open_url || '';
       const previewUrl = item.preview || item.preview_url || '';
 
-      const dlBox = el('div', { class: 's-dl', 'aria-live': 'polite' });
-
       const btnPlayCard = el(
         'button',
         {
@@ -836,8 +708,7 @@
         const msg = e.message || 'Gagal mencari.';
         if (code === 'UPSTREAM_FORBIDDEN') {
           setError(
-            'Provider download memblokir IP serverless (403). ' +
-              'Solusi: host API di server non-Vercel (VPS/Render/Railway) lalu set di More -> API Base.'
+            'Provider download sedang bermasalah (403 / rate limit). Coba lagi beberapa saat.'
           );
         } else {
           setError(msg);
@@ -1188,12 +1059,6 @@
       title: 'More',
       subtitle: 'More',
       render: () => moreView()
-    },
-    {
-      path: '/music',
-      title: 'Music',
-      subtitle: 'Music',
-      render: () => musicView()
     },
     {
       path: '/qr-generator',
