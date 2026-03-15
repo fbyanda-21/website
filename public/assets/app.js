@@ -242,6 +242,8 @@
       open: false,
       loading: false,
       track: null,
+      queue: [],
+      index: -1,
       streamUrl: '',
       startedAt: 0,
       raf: 0
@@ -268,13 +270,29 @@
 
     const barFill = el('div');
     const bar = el('div', { class: 'np-bar' }, [barFill]);
+    const seek = el('input', { class: 'np-seek', type: 'range', min: '0', max: '1000', value: '0' });
     const timeL = el('span', { html: '0:00' });
     const timeR = el('span', { html: '0:00' });
     const timeRow = el('div', { class: 'np-time' }, [timeL, timeR]);
 
+    const btnPrev = el('button', { class: 'np-skip', type: 'button', 'aria-label': 'Previous', disabled: true }, [
+      el('i', { class: 'fas fa-backward-step' })
+    ]);
+
     const btnPlay = el('button', { class: 'np-play', type: 'button', disabled: true });
     btnPlay.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
     btnPlay.addEventListener('click', () => togglePlayer());
+
+    const btnNext = el('button', { class: 'np-skip', type: 'button', 'aria-label': 'Next', disabled: true }, [
+      el('i', { class: 'fas fa-forward-step' })
+    ]);
+
+    const transport = el('div', { class: 'np-transport' }, [btnPrev, btnPlay, btnNext]);
+
+    const volIconL = el('i', { class: 'fas fa-volume-low', 'aria-hidden': 'true' });
+    const volIconR = el('i', { class: 'fas fa-volume-high', 'aria-hidden': 'true' });
+    const vol = el('input', { class: 'np-vol', type: 'range', min: '0', max: '100', value: String(Math.round((playerAudio.volume || 1) * 100)) });
+    const volRow = el('div', { class: 'np-volrow' }, [volIconL, vol, volIconR]);
 
     const btnDownload = el('button', { class: 's-btn primary', type: 'button' }, [
       el('i', { class: 'fas fa-download' }),
@@ -286,7 +304,7 @@
       el('span', { html: 'Open' })
     ]);
 
-    const hint = el('p', { class: 's-hint', html: 'Tap Play untuk mulai. Jika hanya tersedia preview, durasi biasanya 30 detik.' });
+    const hint = el('p', { class: 's-hint', html: 'Tap Play. Swipe/drag untuk seek, slider untuk volume.' });
 
     sheet.append(
       el('div', { class: 'np-top' }, [npTitle, btnClose]),
@@ -295,8 +313,8 @@
         art,
         el('div', {}, [
           titleEl,
-          el('div', { class: 'np-progress' }, [bar, timeRow]),
-          el('div', { class: 'np-controls' }, [btnPlay, hint]),
+          el('div', { class: 'np-progress' }, [bar, seek, timeRow]),
+          el('div', { class: 'np-controls' }, [transport, volRow, hint]),
           el('div', { class: 'np-actions' }, [btnDownload, btnOpen])
         ])
       ])
@@ -317,10 +335,29 @@
       timeR.textContent = Number.isFinite(dur) && dur > 0 ? fmtTime(dur) : '0:00';
       const pct = dur > 0 ? Math.min(100, Math.max(0, (cur / dur) * 100)) : 0;
       barFill.style.width = pct.toFixed(2) + '%';
+      seek.value = dur > 0 ? String(Math.round((cur / dur) * 1000)) : '0';
       player.raf = window.requestAnimationFrame(updateProgress);
     }
 
+    function applyQueueUi() {
+      const hasQueue = Array.isArray(player.queue) && player.queue.length > 1;
+      const i = Number(player.index);
+      btnPrev.disabled = !(hasQueue && i > 0);
+      btnNext.disabled = !(hasQueue && i >= 0 && i < player.queue.length - 1);
+    }
+
+    function openFromQueue(nextIndex) {
+      const idx = Number(nextIndex);
+      if (!Array.isArray(player.queue) || !player.queue.length) return;
+      if (!Number.isFinite(idx) || idx < 0 || idx >= player.queue.length) return;
+      player.index = idx;
+      applyQueueUi();
+      const it = player.queue[idx];
+      openPlayer(it);
+    }
+
     function openPlayer(track) {
+      applyQueueUi();
       player.track = track;
       player.open = true;
 
@@ -363,6 +400,7 @@
       if (spotifyFab) {
         spotifyFab.style.opacity = '1';
         spotifyFab.dataset.active = playerAudio && !playerAudio.paused ? '1' : '0';
+        spotifyFab.dataset.playing = playerAudio && !playerAudio.paused ? '1' : '0';
       }
       if (player.raf) window.cancelAnimationFrame(player.raf);
       player.raf = 0;
@@ -405,15 +443,7 @@
         if (sub) titleEl.querySelector('.np-sub').textContent = sub;
         if (info.thumbnail) artImg.src = info.thumbnail;
 
-        // Wire download button.
-        btnDownload.onclick = async () => {
-          showActivity('Downloading...', 'info', { sticky: true });
-          const name = filenameSafe(`${info.title || t.title} - ${info.artist || t.artist}`) || 'spotify-download';
-          const ext = String(info.extension || 'mp3').replace(/\W+/g, '') || 'mp3';
-          await downloadFile(u, `${name}.${ext}`);
-          showActivity('Download ready', 'success');
-        };
-
+        // Keep download bound to current streamUrl.
         await playUrl(u);
       } catch (e) {
         player.loading = false;
@@ -454,14 +484,20 @@
       btnPlay.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
       showActivity('Ended', 'success');
       if (spotifyFab) spotifyFab.dataset.active = '0';
+      // Auto-next if we have a queue.
+      if (Array.isArray(player.queue) && player.queue.length && player.index >= 0 && player.index < player.queue.length - 1) {
+        openFromQueue(player.index + 1);
+      }
     });
 
     playerAudio.addEventListener('play', () => {
       if (spotifyFab) spotifyFab.dataset.active = '1';
+      if (spotifyFab) spotifyFab.dataset.playing = '1';
     });
 
     playerAudio.addEventListener('pause', () => {
       if (spotifyFab) spotifyFab.dataset.active = '0';
+      if (spotifyFab) spotifyFab.dataset.playing = '0';
     });
 
     window.__spotifyFabToggle = () => {
@@ -480,6 +516,21 @@
       await downloadFile(player.streamUrl, `${name}.mp3`);
       showActivity('Download ready', 'success');
     };
+
+    vol.addEventListener('input', () => {
+      const v = Math.max(0, Math.min(1, Number(vol.value) / 100));
+      playerAudio.volume = v;
+    });
+
+    seek.addEventListener('input', () => {
+      const dur = Number(playerAudio.duration || 0);
+      if (!Number.isFinite(dur) || dur <= 0) return;
+      const pct = Math.max(0, Math.min(1, Number(seek.value) / 1000));
+      playerAudio.currentTime = dur * pct;
+    });
+
+    btnPrev.addEventListener('click', () => openFromQueue(player.index - 1));
+    btnNext.addEventListener('click', () => openFromQueue(player.index + 1));
 
     function clearNotices() {
       noticeErr.style.display = 'none';
@@ -548,14 +599,26 @@
           class: 's-btn play',
           type: 'button',
           onclick: () => {
-            openPlayer({
+            const normalized = {
               title,
               artist,
               album,
               thumbnail: thumbUrl,
               preview: previewUrl,
               url: openUrl
-            });
+            };
+
+            player.queue = state.results.map((it) => ({
+              title: it.title,
+              artist: it.artist,
+              album: it.album,
+              thumbnail: it.thumbnail || '',
+              preview: it.preview || it.preview_url || '',
+              url: it.url || it.open_url || ''
+            }));
+            player.index = idx;
+            applyQueueUi();
+            openPlayer(normalized);
           }
         },
         [el('i', { class: 'fas fa-play' }), el('span', { html: 'Play' })]
