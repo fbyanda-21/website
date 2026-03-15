@@ -71,24 +71,36 @@ async function downloadInstagram(url) {
     const btn = item.find('.download-items__btn a');
     const url_download = btn.attr('href') || '';
     const label = btn.text().trim() || 'download';
-    if (url_download) items.push({ thumbnail, label, url: url_download });
+    if (!url_download) return;
+
+    const u = String(url_download);
+    const l = String(label).toLowerCase();
+
+    let type = 'file';
+    if (/video/.test(l) || /\.mp4(\?|$)/i.test(u)) type = 'video';
+    else if (/photo|image|gambar/.test(l)) type = 'image';
+    else if (/\.(jpg|jpeg|png|webp)(\?|$)/i.test(u)) type = 'image';
+    else if (/\.(jpg|jpeg|png|webp)(\?|$)/i.test(thumbnail)) type = 'image';
+
+    items.push({ thumbnail, label, url: url_download, type });
   });
 
   if (!items.length) {
     throw createInstagramError('Tidak ada media yang ditemukan.', 'INSTAGRAM_EMPTY', 404);
   }
 
-  const title =
-    $('h2').first().text().trim() ||
-    $('h3').first().text().trim() ||
-    '';
+  const title = $('h2').first().text().trim() || $('h3').first().text().trim() || '';
 
-  const best = items[0]?.url || '';
+  const images = items.filter((it) => it.type === 'image').map((it) => it.url);
+  const videos = items.filter((it) => it.type === 'video').map((it) => it.url);
 
   return {
     title,
     items,
-    video: best,
+    images,
+    videos,
+    image: images[0] || '',
+    video: videos[0] || '',
     music: ''
   };
 }

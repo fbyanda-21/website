@@ -486,6 +486,15 @@
         return;
       }
 
+      // Generic image preview (Instagram photos, etc)
+      if (!result.video && (result.image || (Array.isArray(result.images) && result.images.length))) {
+        const imgUrl = result.image || result.images[0];
+        if (imgUrl) {
+          const prevImg = el('div', { class: 'preview' }, [el('img', { src: imgUrl, alt: 'preview' })]);
+          resultWrap.append(prevImg);
+        }
+      }
+
       const videoUrl = result.video || '';
       if (videoUrl) {
         const prev = el('div', { class: 'preview' }, [el('video', { controls: 'true', src: videoUrl })]);

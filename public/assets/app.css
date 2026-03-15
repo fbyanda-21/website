@@ -674,6 +674,13 @@ body {
   background: #000;
 }
 
+.preview img {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: #000;
+}
+
 .dl-grid {
   display: grid;
   grid-template-columns: 1fr;

@@ -22,6 +22,22 @@ async function viaTikwm(url) {
   if (!data || !data.data) return null;
 
   const d = data.data;
+
+  // TikTok Photo Mode (slides)
+  if (Array.isArray(d.images) && d.images.length) {
+    return {
+      provider: 'tikwm',
+      type: 'photo',
+      title: d.title || '',
+      thumbnail: d.cover || d.origin_cover || '',
+      author: d.author?.unique_id || d.author?.nickname || '',
+      images: d.images,
+      music: d.music || '',
+      video: '',
+      raw: data
+    };
+  }
+
   return {
     provider: 'tikwm',
     type: 'video',
