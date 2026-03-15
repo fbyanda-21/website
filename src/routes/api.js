@@ -10,6 +10,8 @@ const { downloadFacebook } = require('../services/downloaders/facebook');
 const { downloadYouTube } = require('../services/downloaders/youtube');
 const { searchSpotifyTracks, getSpotifyTrackMeta } = require('../services/music/spotify_official');
 const { getSpotmateDownloadUrl } = require('../services/music/spotify_spotmate');
+const { searchItunesMusic } = require('../services/music/itunes');
+const { getSpotifyPublicMeta } = require('../services/music/spotify_public_meta');
 
 const router = express.Router();
 
@@ -86,6 +88,15 @@ router.get('/spotify/search', async (req, res) => {
     const result = await searchSpotifyTracks(q, limit);
     sendOk(res, { query: result.query, total: result.total, results: result.results, provider: result.provider });
   } catch (e) {
+    // No-env fallback: use iTunes search (still has preview URLs).
+    if (String(e.code || '') === 'MISSING_SPOTIFY_CREDENTIALS') {
+      try {
+        const result = await searchItunesMusic(q, limit);
+        return sendOk(res, { query: result.query, total: result.total, results: result.results, provider: result.provider });
+      } catch (e2) {
+        return sendError(res, e2.status || 500, e2.code || 'MUSIC_ERROR', e2.message || 'Gagal search music.');
+      }
+    }
     sendError(res, e.status || 500, e.code || 'MUSIC_ERROR', e.message || 'Gagal search music.');
   }
 });
@@ -93,8 +104,18 @@ router.get('/spotify/search', async (req, res) => {
 router.get('/spotify/download', async (req, res) => {
   const url = String(req.query.url || '').trim();
   try {
-    const meta = await getSpotifyTrackMeta(url);
     const dl = await getSpotmateDownloadUrl(url);
+
+    let meta;
+    try {
+      meta = await getSpotifyTrackMeta(url);
+    } catch (e) {
+      if (String(e.code || '') === 'MISSING_SPOTIFY_CREDENTIALS') {
+        meta = await getSpotifyPublicMeta(url);
+      } else {
+        throw e;
+      }
+    }
 
     sendOk(res, {
       url: dl.trackUrl,
