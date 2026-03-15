@@ -441,17 +441,228 @@
       playingBtn: null
     };
 
-    const preview = new Audio();
-    preview.preload = 'none';
+    const playerAudio = new Audio();
+    playerAudio.preload = 'none';
 
-    preview.addEventListener('ended', () => {
-      if (state.playingBtn) {
-        state.playingBtn.innerHTML = '<i class="fas fa-play"></i><span>Preview</span>';
+    const player = {
+      open: false,
+      loading: false,
+      track: null,
+      streamUrl: '',
+      startedAt: 0,
+      raf: 0
+    };
+
+    const overlay = el('div', { class: 'np-overlay', onclick: () => closePlayer() });
+    const sheet = el('div', { class: 'np-sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Now Playing' });
+
+    const npTitle = el('div', { class: 's-brand' }, [
+      el('img', { class: 's-logo', src: '/assets/img/spotify.svg', alt: 'Spotify' }),
+      el('div', { class: 'tiny muted', html: 'Now Playing' })
+    ]);
+
+    const btnClose = el('button', { class: 'np-close', type: 'button', onclick: () => closePlayer(), 'aria-label': 'Close' }, [
+      el('i', { class: 'fas fa-xmark' })
+    ]);
+
+    const artImg = el('img', { alt: 'Cover' });
+    const art = el('div', { class: 'np-art' }, [artImg]);
+    const titleEl = el('div', { class: 'np-meta' }, [
+      el('p', { class: 'np-title', html: 'Track' }),
+      el('div', { class: 'np-sub', html: 'Ready' })
+    ]);
+
+    const barFill = el('div');
+    const bar = el('div', { class: 'np-bar' }, [barFill]);
+    const timeL = el('span', { html: '0:00' });
+    const timeR = el('span', { html: '0:00' });
+    const timeRow = el('div', { class: 'np-time' }, [timeL, timeR]);
+
+    const btnPlay = el('button', { class: 'np-play', type: 'button', disabled: true });
+    btnPlay.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+    btnPlay.addEventListener('click', () => togglePlayer());
+
+    const btnDownload = el('button', { class: 's-btn primary', type: 'button' }, [
+      el('i', { class: 'fas fa-download' }),
+      el('span', { html: 'Download' })
+    ]);
+
+    const btnOpen = el('a', { class: 's-btn ghost', href: '#', target: '_blank', rel: 'noreferrer' }, [
+      el('i', { class: 'fas fa-arrow-up-right-from-square' }),
+      el('span', { html: 'Open' })
+    ]);
+
+    const hint = el('p', { class: 's-hint', html: 'Tap Play untuk mulai. Jika hanya tersedia preview, durasi biasanya 30 detik.' });
+
+    sheet.append(
+      el('div', { class: 'np-top' }, [npTitle, btnClose]),
+      el('div', { class: 'np-grab', 'aria-hidden': 'true' }),
+      el('div', { class: 'np-body' }, [
+        art,
+        el('div', {}, [
+          titleEl,
+          el('div', { class: 'np-progress' }, [bar, timeRow]),
+          el('div', { class: 'np-controls' }, [btnPlay, hint]),
+          el('div', { class: 'np-actions' }, [btnDownload, btnOpen])
+        ])
+      ])
+    );
+
+    function fmtTime(sec) {
+      const n = Math.max(0, Math.floor(Number(sec) || 0));
+      const m = Math.floor(n / 60);
+      const s = n % 60;
+      return `${m}:${String(s).padStart(2, '0')}`;
+    }
+
+    function updateProgress() {
+      if (!player.open) return;
+      const cur = Number(playerAudio.currentTime || 0);
+      const dur = Number(playerAudio.duration || 0);
+      timeL.textContent = fmtTime(cur);
+      timeR.textContent = Number.isFinite(dur) && dur > 0 ? fmtTime(dur) : '0:00';
+      const pct = dur > 0 ? Math.min(100, Math.max(0, (cur / dur) * 100)) : 0;
+      barFill.style.width = pct.toFixed(2) + '%';
+      player.raf = window.requestAnimationFrame(updateProgress);
+    }
+
+    function openPlayer(track) {
+      player.track = track;
+      player.open = true;
+      overlay.classList.add('open');
+      sheet.classList.add('open');
+      overlay.style.display = 'block';
+
+      const t = track || {};
+      const tTitle = String(t.title || 'Track');
+      const tArtist = String(t.artist || '');
+      const tAlbum = String(t.album || '');
+      const subtitle = [tArtist, tAlbum].filter(Boolean).join(' • ') || ' '; 
+      titleEl.querySelector('.np-title').textContent = tTitle;
+      titleEl.querySelector('.np-sub').textContent = subtitle;
+      artImg.src = t.thumbnail || '/assets/img/logo.jpg';
+      btnOpen.href = t.url || '#';
+      btnOpen.style.pointerEvents = t.url ? 'auto' : 'none';
+      btnOpen.style.opacity = t.url ? '1' : '0.6';
+
+      btnPlay.disabled = true;
+      btnDownload.disabled = true;
+      btnDownload.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Preparing...</span>';
+      btnPlay.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Loading...</span>';
+
+      resolveStream(t).catch(() => {});
+
+      if (player.raf) window.cancelAnimationFrame(player.raf);
+      player.raf = window.requestAnimationFrame(updateProgress);
+    }
+
+    function closePlayer() {
+      player.open = false;
+      overlay.classList.remove('open');
+      sheet.classList.remove('open');
+      window.setTimeout(() => {
+        if (!player.open) overlay.style.display = 'none';
+      }, 220);
+      if (player.raf) window.cancelAnimationFrame(player.raf);
+      player.raf = 0;
+    }
+
+    async function resolveStream(t) {
+      player.loading = true;
+      showActivity('Preparing playback...', 'info', { sticky: true });
+
+      const preferred = String(t.preview || '').trim();
+      if (preferred) {
+        player.streamUrl = preferred;
+        btnDownload.disabled = false;
+        btnDownload.innerHTML = '<i class="fas fa-download"></i><span>Download</span>';
+        btnPlay.disabled = false;
+        btnPlay.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+        player.loading = false;
+        showActivity('Ready', 'success');
+        await playUrl(preferred);
+        return;
       }
-      state.playingUrl = '';
-      state.playingBtn = null;
-      showActivity('Preview ended', 'success');
+
+      // Fallback: ask API to resolve a stream/download URL
+      try {
+        const info = await apiGet('/spotify/download', { url: t.url || '' });
+        const u = String(info.download || '').trim();
+        if (!u) throw new Error('Download link not available');
+        player.streamUrl = u;
+
+        btnDownload.disabled = false;
+        btnDownload.innerHTML = '<i class="fas fa-download"></i><span>Download</span>';
+        btnPlay.disabled = false;
+        btnPlay.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+        player.loading = false;
+        showActivity('Ready', 'success');
+
+        // Update meta if provided.
+        if (info.title) titleEl.querySelector('.np-title').textContent = info.title;
+        const sub = [info.artist, info.album].filter(Boolean).join(' • ');
+        if (sub) titleEl.querySelector('.np-sub').textContent = sub;
+        if (info.thumbnail) artImg.src = info.thumbnail;
+
+        // Wire download button.
+        btnDownload.onclick = async () => {
+          showActivity('Downloading...', 'info', { sticky: true });
+          const name = filenameSafe(`${info.title || t.title} - ${info.artist || t.artist}`) || 'spotify-download';
+          const ext = String(info.extension || 'mp3').replace(/\W+/g, '') || 'mp3';
+          await downloadFile(u, `${name}.${ext}`);
+          showActivity('Download ready', 'success');
+        };
+
+        await playUrl(u);
+      } catch (e) {
+        player.loading = false;
+        btnPlay.disabled = true;
+        btnPlay.innerHTML = '<i class="fas fa-triangle-exclamation"></i><span>Unavailable</span>';
+        btnDownload.disabled = true;
+        btnDownload.innerHTML = '<i class="fas fa-triangle-exclamation"></i><span>Failed</span>';
+        hint.textContent = 'Download gagal. Provider kadang block / rate limit. Coba lagi beberapa saat.';
+        showActivity('Playback failed', 'error');
+      }
+    }
+
+    async function playUrl(u) {
+      if (!u) return;
+      if (playerAudio.src !== u) playerAudio.src = u;
+      try {
+        await playerAudio.play();
+        btnPlay.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
+        showActivity('Now Playing', 'info', { sticky: true });
+      } catch (e) {
+        btnPlay.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+        showActivity('Tap to play', 'success');
+      }
+    }
+
+    function togglePlayer() {
+      if (!player.streamUrl) return;
+      if (playerAudio.paused) {
+        playUrl(player.streamUrl);
+      } else {
+        playerAudio.pause();
+        btnPlay.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+        showActivity('Paused', 'success');
+      }
+    }
+
+    playerAudio.addEventListener('ended', () => {
+      btnPlay.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+      showActivity('Ended', 'success');
     });
+
+    // Default download handler (updated when resolveStream returns info)
+    btnDownload.onclick = async () => {
+      if (!player.streamUrl) return;
+      showActivity('Downloading...', 'info', { sticky: true });
+      const t = player.track || {};
+      const name = filenameSafe(`${t.title || 'spotify'} - ${t.artist || ''}`) || 'spotify-download';
+      await downloadFile(player.streamUrl, `${name}.mp3`);
+      showActivity('Download ready', 'success');
+    };
 
     function clearNotices() {
       noticeErr.style.display = 'none';
@@ -516,123 +727,40 @@
 
       const dlBox = el('div', { class: 's-dl', 'aria-live': 'polite' });
 
-      const btnDl = el(
+      const btnPlayCard = el(
         'button',
         {
-          class: 's-btn primary',
+          class: 's-btn play',
           type: 'button',
-          onclick: async () => {
-            if (!openUrl) return;
-            if (state.downloadBusy.has(openUrl)) return;
-            state.downloadBusy.add(openUrl);
-            btnDl.disabled = true;
-            btnDl.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Fetching...</span>';
-            dlBox.classList.remove('show');
-            dlBox.innerHTML = '';
-            showActivity('Preparing download...', 'info', { sticky: true });
-            try {
-              const info = await apiGet('/spotify/download', { url: openUrl });
-              const chipNodes = [
-                el('span', { class: 's-chip', html: escapeHtml(info.quality || 'HQ') }),
-                el('span', { class: 's-chip', html: escapeHtml(info.extension || 'mp3') })
-              ];
-              if (info.duration) chipNodes.push(el('span', { class: 's-chip', html: escapeHtml(info.duration) }));
-              const chips = el('div', { class: 'line' }, chipNodes);
-
-              const linkUrl = info.download || '';
-              const btnSave = el(
-                'button',
-                {
-                  class: 's-btn ghost',
-                  type: 'button',
-                  onclick: async () => {
-                    if (!linkUrl) return;
-                    showActivity('Downloading...', 'info', { sticky: true });
-                    const name = filenameSafe(`${info.title || title} - ${info.artist || artist}`) || 'spotify-download';
-                    const ext = String(info.extension || 'mp3').replace(/\W+/g, '') || 'mp3';
-                    await downloadFile(linkUrl, `${name}.${ext}`);
-                    showActivity('Download ready', 'success');
-                  }
-                },
-                [el('i', { class: 'fas fa-download' }), el('span', { html: 'Download' })]
-              );
-
-              const openBtn = el(
-                'a',
-                {
-                  class: 's-btn ghost',
-                  href: openUrl,
-                  target: '_blank',
-                  rel: 'noreferrer'
-                },
-                [el('i', { class: 'fas fa-arrow-up-right-from-square' }), el('span', { html: 'Open' })]
-              );
-
-              dlBox.append(
-                el('div', { class: 'line' }, [
-                  el('span', { class: 's-chip', html: '<i class="fas fa-music"></i> Ready' })
-                ]),
-                chips,
-                el('div', { class: 'line' }, [btnSave, openBtn])
-              );
-              dlBox.classList.add('show');
-              showActivity('Download info ready', 'success');
-            } catch (e) {
-              dlBox.innerHTML = '<div class="subtitle" style="margin:0">Gagal mengambil link download: ' + escapeHtml(e.message || 'error') + '</div>';
-              dlBox.classList.add('show');
-              if (String(e.code || '') === 'UPSTREAM_FORBIDDEN') {
-                dlBox.innerHTML =
-                  '<div class="subtitle" style="margin:0">Provider memblokir IP serverless (403). Host API di server non-Vercel lalu set di More -> API Base.</div>';
-              }
-              showActivity('Download failed', 'error');
-            } finally {
-              state.downloadBusy.delete(openUrl);
-              btnDl.disabled = false;
-              btnDl.innerHTML = '<i class="fas fa-download"></i><span>Download</span>';
-            }
+          onclick: () => {
+            openPlayer({
+              title,
+              artist,
+              album,
+              thumbnail: thumbUrl,
+              preview: previewUrl,
+              url: openUrl
+            });
           }
         },
-        [el('i', { class: 'fas fa-download' }), el('span', { html: 'Download' })]
+        [el('i', { class: 'fas fa-play' }), el('span', { html: 'Play' })]
       );
 
-      const btnPreview = el(
+      const btnMore = el(
         'button',
         {
-          class: 's-btn',
+          class: 's-btn more',
           type: 'button',
-          disabled: !previewUrl,
-          title: previewUrl ? 'Play preview' : 'Preview tidak tersedia',
-          onclick: async () => {
-            if (!previewUrl) return;
-            const willPause = state.playingUrl === previewUrl && !preview.paused;
-            try {
-              if (willPause) {
-                preview.pause();
-                state.playingUrl = '';
-                state.playingBtn = null;
-                btnPreview.innerHTML = '<i class="fas fa-play"></i><span>Preview</span>';
-                showActivity('Preview paused', 'success');
-                return;
-              }
-              if (state.playingBtn && state.playingBtn !== btnPreview) {
-                state.playingBtn.innerHTML = '<i class="fas fa-play"></i><span>Preview</span>';
-              }
-              if (!preview.paused) preview.pause();
-              state.playingUrl = previewUrl;
-              state.playingBtn = btnPreview;
-              preview.src = previewUrl;
-              await preview.play();
-              btnPreview.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
-              showActivity(`Now Playing: ${title}`, 'info', { sticky: true });
-            } catch (e) {
-              state.playingUrl = '';
-              state.playingBtn = null;
-              btnPreview.innerHTML = '<i class="fas fa-play"></i><span>Preview</span>';
-              showActivity('Preview gagal diputar', 'error');
-            }
-          }
+          onclick: () => openPlayer({
+            title,
+            artist,
+            album,
+            thumbnail: thumbUrl,
+            preview: previewUrl,
+            url: openUrl
+          })
         },
-        [el('i', { class: 'fas fa-play' }), el('span', { html: 'Preview' })]
+        [el('i', { class: 'fas fa-chevron-up' }), el('span', { html: 'Player' })]
       );
 
       const img = thumbUrl
@@ -647,8 +775,7 @@
             el('div', { class: 's-sub', html: `${escapeHtml(artist)}${album ? ' • ' + escapeHtml(album) : ''}` })
           ])
         ]),
-        el('div', { class: 's-actions' }, [btnDl, btnPreview]),
-        dlBox
+        el('div', { class: 's-actions' }, [btnPlayCard, btnMore])
       ]);
 
       return card;
@@ -738,15 +865,22 @@
 
     return el('div', { class: 'spotify-page' }, [
       el('div', { class: 'panel' }, [
-        el('h2', { class: 'title', html: '<i class="fab fa-spotify"></i> Spotify' }),
-        el('p', { class: 'subtitle', html: 'Cari lagu, lalu download. Preview tombol hanya muncul jika API menyediakan preview.' }),
+        el('h2', { class: 'title' }, [
+          el('span', { class: 's-brand' }, [
+            el('img', { class: 's-logo', src: '/assets/img/spotify.svg', alt: 'Spotify' }),
+            el('span', { html: 'Spotify' })
+          ])
+        ]),
+        el('p', { class: 'subtitle', html: 'Tap Play untuk buka player ala iPhone. Download ada di dalam player.' }),
         el('div', { class: 'spotify-toolbar' }, [
           el('div', { class: 'row' }, [input, btn]),
           noticeErr,
           noticeOk
         ])
       ]),
-      resultsWrap
+      resultsWrap,
+      overlay,
+      sheet
     ]);
   }
 
