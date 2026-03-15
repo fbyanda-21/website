@@ -201,14 +201,8 @@ body {
   width: 26px;
   height: 26px;
   display: block;
-  transition: opacity 160ms ease;
-}
-
-.spotify-fab-music {
-  position: absolute;
-  font-size: 20px;
-  opacity: 0;
-  transform: translateY(1px) scale(0.96);
+  border-radius: 10px;
+  object-fit: cover;
   transition: opacity 160ms ease, transform 160ms ease;
 }
 
@@ -229,21 +223,15 @@ body {
   transform: translateY(0);
 }
 
-.spotify-fab[data-active="1"] .spotify-fab-logo {
+.spotify-fab[data-active="1"]:not([data-cover="1"]) .spotify-fab-logo {
   opacity: 0;
 }
 
-.spotify-fab[data-playing="1"] .spotify-fab-logo {
-  opacity: 0;
-}
-
-.spotify-fab[data-playing="1"] .spotify-fab-music {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-}
-
-.spotify-fab[data-active="1"] .spotify-fab-music {
-  opacity: 1;
+.spotify-fab[data-cover="1"] .spotify-fab-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 14px;
+  transform: scale(1.02);
 }
 
 @keyframes np-bars {
