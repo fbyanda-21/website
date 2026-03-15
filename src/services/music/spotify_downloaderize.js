@@ -1,5 +1,15 @@
 const { http } = require('../../utils/http');
 
+const mobileUserAgent =
+  'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36';
+
+function upstreamForbiddenHint() {
+  return (
+    'Upstream blocked (HTTP 403) from spotify.downloaderize.com. ' +
+    'This often happens on Vercel/other serverless IP ranges (Cloudflare anti-bot). '
+  );
+}
+
 function spotifyError(message, code = 'SPOTIFY_ERROR', status = 400, details) {
   const err = new Error(message);
   err.code = code;
@@ -42,14 +52,27 @@ function pickNonce(html, key) {
 }
 
 async function fetchNonce(kind) {
-  const { data } = await http.get('https://spotify.downloaderize.com', {
-    headers: {
-      Accept: 'text/html,application/xhtml+xml'
+  try {
+    const { data } = await http.get('https://spotify.downloaderize.com', {
+      headers: {
+        'User-Agent': mobileUserAgent,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        Referer: 'https://spotify.downloaderize.com/'
+      }
+    });
+    const nonce = pickNonce(data, kind);
+    if (!nonce) throw spotifyError('Gagal mengambil nonce upstream.', 'UPSTREAM_ERROR', 502);
+    return nonce;
+  } catch (e) {
+    const status = e?.response?.status;
+    if (status === 403) {
+      throw spotifyError(upstreamForbiddenHint(), 'UPSTREAM_FORBIDDEN', 502);
     }
-  });
-  const nonce = pickNonce(data, kind);
-  if (!nonce) throw spotifyError('Gagal mengambil nonce upstream.', 'UPSTREAM_ERROR', 502);
-  return nonce;
+    throw spotifyError('Gagal menghubungi upstream untuk nonce.', 'UPSTREAM_ERROR', 502, {
+      status: status || null
+    });
+  }
 }
 
 async function spotifySearch(query, limit = 20) {
@@ -60,18 +83,32 @@ async function spotifySearch(query, limit = 20) {
 
   const security = await fetchNonce('sts_ajax');
 
-  const { data } = await http.get('https://spotify.downloaderize.com/wp-admin/admin-ajax.php', {
-    params: {
-      action: 'sts_search_spotify',
-      query: q,
-      security
-    },
-    headers: {
-      Accept: 'application/json, text/javascript, */*; q=0.01',
-      'x-requested-with': 'XMLHttpRequest',
-      Referer: 'https://spotify.downloaderize.com/'
+  let data;
+  try {
+    const res = await http.get('https://spotify.downloaderize.com/wp-admin/admin-ajax.php', {
+      params: {
+        action: 'sts_search_spotify',
+        query: q,
+        security
+      },
+      headers: {
+        'User-Agent': mobileUserAgent,
+        Accept: 'application/json, text/javascript, */*; q=0.01',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'x-requested-with': 'XMLHttpRequest',
+        Referer: 'https://spotify.downloaderize.com/'
+      }
+    });
+    data = res.data;
+  } catch (e) {
+    const status = e?.response?.status;
+    if (status === 403) {
+      throw spotifyError(upstreamForbiddenHint(), 'UPSTREAM_FORBIDDEN', 502);
     }
-  });
+    throw spotifyError('Gagal request search ke upstream.', 'UPSTREAM_ERROR', 502, {
+      status: status || null
+    });
+  }
 
   const items = data?.data?.tracks?.items || [];
   const results = Array.isArray(items)
@@ -106,15 +143,29 @@ async function spotifyDownload(inputUrl) {
     nonce
   });
 
-  const { data } = await http.post('https://spotify.downloaderize.com/wp-admin/admin-ajax.php', body.toString(), {
-    headers: {
-      Accept: 'application/json, text/javascript, */*; q=0.01',
-      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-      'x-requested-with': 'XMLHttpRequest',
-      Origin: 'https://spotify.downloaderize.com',
-      Referer: 'https://spotify.downloaderize.com/'
+  let data;
+  try {
+    const res = await http.post('https://spotify.downloaderize.com/wp-admin/admin-ajax.php', body.toString(), {
+      headers: {
+        'User-Agent': mobileUserAgent,
+        Accept: 'application/json, text/javascript, */*; q=0.01',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'x-requested-with': 'XMLHttpRequest',
+        Origin: 'https://spotify.downloaderize.com',
+        Referer: 'https://spotify.downloaderize.com/'
+      }
+    });
+    data = res.data;
+  } catch (e) {
+    const status = e?.response?.status;
+    if (status === 403) {
+      throw spotifyError(upstreamForbiddenHint(), 'UPSTREAM_FORBIDDEN', 502);
     }
-  });
+    throw spotifyError('Gagal request download ke upstream.', 'UPSTREAM_ERROR', 502, {
+      status: status || null
+    });
+  }
 
   const d = data?.data;
   if (!d || typeof d !== 'object') {
