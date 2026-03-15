@@ -316,7 +316,9 @@
     let mounted = false;
     function ensureMounted() {
       if (mounted) return;
-      document.body.append(overlay, sheet);
+      overlay.append(sheet);
+      sheet.addEventListener('click', (e) => e.stopPropagation());
+      document.body.append(overlay);
       mounted = true;
     }
 
@@ -430,6 +432,7 @@
 
     function open(track, opts = {}) {
       ensureMounted();
+      overlay.style.display = '';
       if (opts && Array.isArray(opts.queue)) state.queue = opts.queue;
       if (opts && Number.isFinite(Number(opts.index))) state.index = Number(opts.index);
       applyQueueUi();
@@ -440,7 +443,6 @@
       state.open = true;
       overlay.classList.add('open');
       sheet.classList.add('open');
-      overlay.style.display = 'block';
 
       btnPlay.disabled = true;
       btnDownload.disabled = true;
