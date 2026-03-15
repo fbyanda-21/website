@@ -464,6 +464,8 @@ body {
 .result {
   display: none;
   margin-top: 12px;
+  width: 100%;
+  max-width: 100%;
 }
 
 .preview {
@@ -490,6 +492,8 @@ body {
   grid-template-columns: 1fr;
   gap: 10px;
   margin-top: 12px;
+  width: 100%;
+  max-width: 100%;
 }
 
 .dl-item {
@@ -501,6 +505,9 @@ body {
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.06);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .dl-item .left {
@@ -508,6 +515,7 @@ body {
   align-items: center;
   gap: 10px;
   min-width: 0;
+  flex: 1;
 }
 
 .dl-item .tag {
@@ -524,6 +532,8 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
   color: rgba(255, 255, 255, 0.92);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .dl-item a {
@@ -536,6 +546,8 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  max-width: 100%;
+  flex-shrink: 0;
 }
 
 .dl-item a:hover {
@@ -684,5 +696,23 @@ body {
   }
   .dock-range {
     grid-column: 1 / -1;
+  }
+
+  .dl-item {
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .dl-item .name {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .dl-item a {
+    width: 100%;
+    justify-content: center;
   }
 }
