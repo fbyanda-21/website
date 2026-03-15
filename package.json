@@ -6,8 +6,7 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js",
-    "download:assets": "node scripts/download-assets.js"
+    "dev": "node --watch src/server.js"
   },
   "dependencies": {
     "axios": "^1.12.2",

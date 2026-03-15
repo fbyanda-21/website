@@ -8,7 +8,6 @@ const { downloadTikTok } = require('../services/downloaders/tiktok');
 const { downloadInstagram } = require('../services/downloaders/instagram');
 const { downloadFacebook } = require('../services/downloaders/facebook');
 const { downloadYouTube } = require('../services/downloaders/youtube');
-const { searchSpotifyTracks, getSpotifyTrack } = require('../services/spotify');
 
 const router = express.Router();
 
@@ -74,27 +73,6 @@ router.get('/download/youtube', async (req, res) => {
     sendOk(res, result);
   } catch (e) {
     sendError(res, e.status || 500, e.code || 'YOUTUBE_ERROR', e.message || 'Gagal memproses YouTube.');
-  }
-});
-
-router.get('/music/spotify/search', async (req, res) => {
-  const q = String(req.query.q || '').trim();
-  const limit = String(req.query.limit || '').trim();
-  try {
-    const result = await searchSpotifyTracks(q, limit);
-    sendOk(res, { items: result });
-  } catch (e) {
-    sendError(res, e.status || 500, e.code || 'SPOTIFY_ERROR', e.message || 'Gagal search Spotify.');
-  }
-});
-
-router.get('/music/spotify/track', async (req, res) => {
-  const id = String(req.query.id || '').trim();
-  try {
-    const result = await getSpotifyTrack(id);
-    sendOk(res, result);
-  } catch (e) {
-    sendError(res, e.status || 500, e.code || 'SPOTIFY_ERROR', e.message || 'Gagal ambil track Spotify.');
   }
 });
 

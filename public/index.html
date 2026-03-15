@@ -15,91 +15,52 @@
   </head>
   <body>
     <div class="app" id="app">
-      <button class="menu-toggle" id="menuToggle" aria-label="Buka menu">
-        <i class="fas fa-bars"></i>
-      </button>
-      <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-      <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-          <div class="logo-container" aria-hidden="true">
-            <div class="logo-ring"></div>
-            <img src="/assets/img/logo.jpg" class="logo" alt="yanz_DL" />
+      <header class="appbar" role="banner">
+        <div class="brand" aria-label="yanz_DL">
+          <div class="brand-mark" aria-hidden="true">
+            <img src="/assets/img/logo.jpg" class="brand-logo" alt="" />
           </div>
-          <div class="app-title">yanz_DL</div>
-          <div class="access-info" id="routeSubtitle">Downloader Tools</div>
-        </div>
-
-        <nav class="nav-menu" aria-label="Navigasi">
-          <a class="nav-link" href="/dashboard" data-link><i class="fas fa-tachometer-alt"></i>Dashboard</a>
-          <a class="nav-link" href="/qr-generator" data-link><i class="fas fa-qrcode"></i>QR Generator</a>
-          <a class="nav-link" href="/music" data-link><i class="fas fa-music"></i>Music Search</a>
-          <div class="nav-sep"></div>
-          <a class="nav-link" href="/tiktok" data-link><i class="fab fa-tiktok"></i>TikTok</a>
-          <a class="nav-link" href="/instagram" data-link><i class="fab fa-instagram"></i>Instagram</a>
-          <a class="nav-link" href="/youtube" data-link><i class="fab fa-youtube"></i>YouTube</a>
-          <a class="nav-link" href="/facebook" data-link><i class="fab fa-facebook"></i>Facebook</a>
-        </nav>
-
-        <div class="sidebar-footer">
-          <div class="muted">
-            <div class="tiny">API: <span id="apiStatus">checking...</span></div>
-            <div class="tiny">Jam: <span id="currentTime">--:--:--</span></div>
+          <div class="brand-text">
+            <div class="brand-title">yanz_DL</div>
+            <div class="brand-sub" id="routeTitle">Dashboard</div>
           </div>
         </div>
-      </aside>
 
-      <main class="main-content">
-        <header class="header">
-          <div class="header-left">
-            <div class="main-logo-container" aria-hidden="true">
-              <div class="main-logo-ring"></div>
-              <img src="/assets/img/logo.jpg" class="main-logo" alt="" />
-            </div>
-            <div>
-              <div class="main-app-title">yanz_DL</div>
-              <div class="main-access-info" id="routeTitle">Dashboard</div>
-            </div>
-          </div>
+        <div class="appbar-right">
+          <div class="chip" title="API status">API: <span id="apiStatus">checking...</span></div>
+          <div class="chip" title="Jam"><span id="currentTime">--:--:--</span></div>
+        </div>
+      </header>
 
-          <div class="header-right">
-            <a class="ghost-btn" href="https://github.com/" target="_blank" rel="noreferrer"><i class="fab fa-github"></i><span>GitHub</span></a>
-          </div>
-        </header>
-
+      <main class="content" role="main">
         <section class="view" id="view"></section>
-
         <footer class="footer">&copy; 2026 - fbyanxzz. All rights reserved.</footer>
       </main>
 
-      <div class="music-dock" id="musicDock" role="region" aria-label="Background music">
-        <div class="dock-controls">
-          <button class="dock-btn" id="musicPrev" aria-label="Prev track" title="Prev">
-            <i class="fas fa-backward"></i>
-          </button>
-          <button class="dock-btn" id="musicToggle" aria-label="Play/Pause" title="Play/Pause">
-            <i class="fas fa-play"></i>
-          </button>
-          <button class="dock-btn" id="musicNext" aria-label="Next track" title="Next">
-            <i class="fas fa-forward"></i>
-          </button>
-        </div>
-
-        <div class="dock-info">
-          <div class="dock-title" id="musicTitle">Music</div>
-          <div class="dock-subtitle" id="musicHint">Tap untuk mulai</div>
-        </div>
-
-        <select class="dock-select" id="musicTrack" aria-label="Pilih lagu"></select>
-
-        <button class="dock-btn" id="musicDownload" aria-label="Download track" title="Download">
-          <i class="fas fa-download"></i>
+      <div class="mini-player" id="miniPlayer" hidden>
+        <button class="pill-btn" id="miniPlay" type="button" aria-label="Play/Pause">
+          <i class="fas fa-play"></i>
         </button>
-
-        <input class="dock-range" id="musicVolume" type="range" min="0" max="1" step="0.01" aria-label="Volume" />
+        <div class="mini-meta">
+          <div class="mini-title" id="miniTitle">Track</div>
+          <div class="mini-sub" id="miniSub">Ready</div>
+        </div>
+        <button class="pill-btn" id="miniPrev" type="button" aria-label="Prev">
+          <i class="fas fa-backward"></i>
+        </button>
+        <button class="pill-btn" id="miniNext" type="button" aria-label="Next">
+          <i class="fas fa-forward"></i>
+        </button>
       </div>
+      <audio id="audioPlayer" preload="none"></audio>
 
-      <audio id="bg-music" preload="none"></audio>
+      <nav class="bottom-nav" aria-label="Navigasi">
+        <a class="nav-btn" href="/dashboard" data-link><i class="fas fa-house"></i><span>Home</span></a>
+        <a class="nav-btn" href="/tiktok" data-link><i class="fab fa-tiktok"></i><span>TikTok</span></a>
+        <a class="nav-btn" href="/instagram" data-link><i class="fab fa-instagram"></i><span>IG</span></a>
+        <a class="nav-btn" href="/youtube" data-link><i class="fab fa-youtube"></i><span>YT</span></a>
+        <a class="nav-btn" href="/more" data-link><i class="fas fa-ellipsis"></i><span>More</span></a>
+      </nav>
     </div>
   </body>
 </html>

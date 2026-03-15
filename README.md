@@ -8,7 +8,7 @@ Single-page downloader app (Express + SPA) untuk:
 
 Checklist
 - [x] Express server + static hosting SPA
-- [x] Background music tetap jalan saat pindah halaman (client-side routing)
+- [x] Client-side routing (SPA)
 - [x] API downloader: TikTok / Instagram / YouTube / Facebook
 - [x] Rate limit untuk endpoint API
 - [x] PM2 ecosystem config (port default 8676)
@@ -23,26 +23,6 @@ Checklist
 ```bash
 npm install
 ```
-
-## Download music + logo assets
-```bash
-npm run download:assets
-```
-
-Nama file music (lokal)
-- `public/assets/music/01-death-bed.mp3`
-- `public/assets/music/02-lemon-tree.mp3`
-- `public/assets/music/03-surrender.mp3`
-- `public/assets/music/04-past-lives.mp3`
-- `public/assets/music/05-play-date.mp3`
-- `public/assets/music/06-trouble-is-a-friend.mp3`
-- `public/assets/music/07-rude.mp3`
-- `public/assets/music/08-love-story-ts.mp3`
-- `public/assets/music/09-love-story-indila.mp3`
-- `public/assets/music/10-dusk-till-dawn.mp3`
-- `public/assets/music/11-somewhere-only-we-know.mp3`
-- `public/assets/music/12-off-my-face.mp3`
-- `public/assets/music/13-dandelions.mp3`
 
 ## Run (dev)
 ```bash
@@ -108,5 +88,3 @@ Error shape
 - Rate limit:
   - `/api/v1/*`: 120 req/menit
   - `/api/v1/download/*`: 30 req/menit
-- Playlist music diatur di `public/assets/app.js` (dock kanan bawah).
-- Spotify search/preview pakai Spotify Web API (preview_url).
