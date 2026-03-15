@@ -36,8 +36,6 @@ const apiLimiter = rateLimit({
   }
 });
 
-app.use('/api/v1', apiLimiter, apiRouter);
-
 const publicDir = path.join(__dirname, '..', 'public');
 app.use(
   express.static(publicDir, {
@@ -53,6 +51,17 @@ app.use(
     }
   })
 );
+
+app.use('/api/v1', apiLimiter, apiRouter);
+
+// Convenience API routes without /api/v1 prefix.
+// Scoped to avoid rate-limiting static assets / SPA navigation.
+app.use((req, res, next) => {
+  if (req.path.startsWith('/spotify/') || req.path.startsWith('/download/')) {
+    return apiLimiter(req, res, () => apiRouter(req, res, next));
+  }
+  return next();
+});
 
 // SPA fallback (keep background music alive across navigation)
 app.get('*', (req, res, next) => {

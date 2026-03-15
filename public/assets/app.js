@@ -7,6 +7,10 @@
   const apiStatusEl = qs('#apiStatus');
   const timeEl = qs('#currentTime');
 
+  const activityPill = qs('#activityPill');
+  const activityText = qs('#activityText');
+  const activityHandle = qs('#activityHandle');
+
   function navigate(path) {
     history.pushState({}, '', path);
     renderRoute();
@@ -89,6 +93,66 @@
   }
 
   checkApi();
+
+  const activityState = {
+    hideTimer: null,
+    expanded: false,
+    lastText: '',
+    lastKind: 'info'
+  };
+
+  function showActivity(text, kind, { sticky } = {}) {
+    if (!activityPill || !activityText) return;
+    activityState.lastText = String(text || '').trim() || 'Working...';
+    activityState.lastKind = kind || activityState.lastKind || 'info';
+    activityText.textContent = activityState.lastText;
+    activityPill.dataset.kind = activityState.lastKind;
+    activityPill.dataset.active = activityState.lastKind === 'info' ? '1' : '0';
+    if (activityHandle) {
+      activityHandle.dataset.active = activityPill.dataset.active;
+      activityHandle.hidden = true;
+    }
+    activityPill.hidden = false;
+    activityPill.classList.remove('shrink');
+
+    if (activityState.hideTimer) window.clearTimeout(activityState.hideTimer);
+    if (!sticky) {
+      activityState.hideTimer = window.setTimeout(() => {
+        if (activityState.expanded) return;
+        activityPill.classList.add('shrink');
+        window.setTimeout(() => {
+          if (!activityState.expanded) {
+            activityPill.hidden = true;
+            if (activityHandle) {
+              activityHandle.hidden = false;
+              activityHandle.classList.remove('showing');
+              // Force reflow for animation.
+              void activityHandle.offsetWidth;
+              activityHandle.classList.add('showing');
+            }
+          }
+        }, 200);
+      }, 5000);
+    }
+  }
+
+  if (activityPill) {
+    activityPill.addEventListener('click', () => {
+      activityState.expanded = !activityState.expanded;
+      if (activityState.expanded) {
+        showActivity(activityState.lastText || 'Ready', activityPill.dataset.kind || 'info', { sticky: true });
+      } else {
+        showActivity(activityState.lastText || 'Ready', activityPill.dataset.kind || 'info', { sticky: false });
+      }
+    });
+  }
+
+  if (activityHandle) {
+    activityHandle.addEventListener('click', () => {
+      activityState.expanded = true;
+      showActivity(activityState.lastText || 'Ready', activityState.lastKind || 'info', { sticky: true });
+    });
+  }
 
   function el(tag, attrs = {}, children = []) {
     const node = document.createElement(tag);
@@ -230,9 +294,13 @@
   const miniNext = qs('#miniNext');
   const miniTitle = qs('#miniTitle');
   const miniSub = qs('#miniSub');
+  const miniEq = qs('#miniEq');
+  const nowPlayingHandle = qs('#nowPlayingHandle');
 
   const playerState = {
-    index: 0
+    index: 0,
+    hideTimer: null,
+    expanded: true
   };
 
   function currentTrack() {
@@ -241,13 +309,36 @@
 
   function showMini(show) {
     if (!miniPlayerEl) return;
-    miniPlayerEl.hidden = !show;
+    if (show) {
+      miniPlayerEl.hidden = false;
+      miniPlayerEl.classList.remove('collapsed');
+      if (nowPlayingHandle) nowPlayingHandle.hidden = true;
+      playerState.expanded = true;
+    } else {
+      miniPlayerEl.classList.add('collapsed');
+      window.setTimeout(() => {
+        miniPlayerEl.hidden = true;
+      }, 230);
+      if (nowPlayingHandle) nowPlayingHandle.hidden = false;
+      playerState.expanded = false;
+    }
   }
 
   function setMiniUi(playing) {
     if (miniPlay) {
       miniPlay.innerHTML = playing ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
     }
+    if (miniEq) miniEq.classList.toggle('active', Boolean(playing));
+  }
+
+  function scheduleMiniAutoHide() {
+    if (!miniPlayerEl) return;
+    if (playerState.hideTimer) window.clearTimeout(playerState.hideTimer);
+    playerState.hideTimer = window.setTimeout(() => {
+      if (audioPlayer && !audioPlayer.paused) return;
+      if (!playerState.expanded) return;
+      showMini(false);
+    }, 5000);
   }
 
   async function playIndex(idx) {
@@ -264,6 +355,7 @@
     try {
       await audioPlayer.play();
       setMiniUi(true);
+      scheduleMiniAutoHide();
     } catch (e) {
       setMiniUi(false);
       if (miniSub) miniSub.textContent = 'Tap untuk play';
@@ -278,11 +370,18 @@
       audioPlayer.pause();
       setMiniUi(false);
     }
+    scheduleMiniAutoHide();
   }
 
   if (miniPlay) miniPlay.addEventListener('click', togglePlay);
   if (miniPrev) miniPrev.addEventListener('click', () => playIndex(playerState.index - 1));
   if (miniNext) miniNext.addEventListener('click', () => playIndex(playerState.index + 1));
+  if (nowPlayingHandle) {
+    nowPlayingHandle.addEventListener('click', () => {
+      showMini(true);
+      scheduleMiniAutoHide();
+    });
+  }
   if (audioPlayer) {
     audioPlayer.addEventListener('ended', () => playIndex(playerState.index + 1));
     audioPlayer.addEventListener('pause', () => setMiniUi(false));
@@ -350,8 +449,334 @@
       el('div', { class: 'actions' }, [
         quickBtn('Facebook', 'fab fa-facebook', '/facebook'),
         quickBtn('QR Generator', 'fas fa-qrcode', '/qr-generator'),
-        quickBtn('Music', 'fas fa-music', '/music')
+        quickBtn('Music', 'fas fa-music', '/music'),
+        quickBtn('Spotify', 'fab fa-spotify', '/spotify')
       ])
+    ]);
+  }
+
+  function spotifyView() {
+    const input = el('input', {
+      class: 'input',
+      placeholder: 'Cari lagu di Spotify (judul / artist / album)',
+      value: ''
+    });
+
+    const noticeErr = el('div', { class: 'notice error' });
+    const noticeOk = el('div', { class: 'notice success' });
+
+    const resultsWrap = el('div', { class: 'spotify-results' });
+    const empty = () =>
+      el('div', {
+        class: 's-empty',
+        html:
+          '<div class="title" style="margin:0 0 6px"><i class="fab fa-spotify"></i> Spotify Search</div>' +
+          '<div class="subtitle" style="margin:0">Ketik kata kunci, lalu tekan Search. Hasil akan tampil dalam card yang rapi dan responsif.</div>'
+      });
+
+    const state = {
+      loading: false,
+      error: '',
+      results: [],
+      currentQuery: '',
+      downloadBusy: new Set(),
+      playingUrl: '',
+      playingBtn: null
+    };
+
+    const preview = new Audio();
+    preview.preload = 'none';
+
+    preview.addEventListener('ended', () => {
+      if (state.playingBtn) {
+        state.playingBtn.innerHTML = '<i class="fas fa-play"></i><span>Preview</span>';
+      }
+      state.playingUrl = '';
+      state.playingBtn = null;
+      showActivity('Preview ended', 'success');
+    });
+
+    function clearNotices() {
+      noticeErr.style.display = 'none';
+      noticeOk.style.display = 'none';
+    }
+
+    function setError(msg) {
+      state.error = msg || '';
+      if (state.error) {
+        noticeErr.textContent = 'Error: ' + state.error;
+        noticeErr.style.display = 'block';
+      } else {
+        noticeErr.style.display = 'none';
+      }
+    }
+
+    function setInfo(msg) {
+      if (msg) {
+        noticeOk.textContent = String(msg);
+        noticeOk.style.display = 'block';
+      } else {
+        noticeOk.style.display = 'none';
+      }
+    }
+
+    function renderSkeleton() {
+      resultsWrap.innerHTML = '';
+      for (let i = 0; i < 6; i++) {
+        const card = el('div', { class: 's-card s-skel' }, [
+          el('div', { class: 's-row' }, [
+            el('div', { class: 's-thumb' }, [el('div', { class: 'block', style: 'width:100%;height:100%;border-radius:16px' })]),
+            el('div', { class: 's-meta' }, [
+              el('div', { class: 'block', style: 'height:14px;width:92%;margin-bottom:10px' }),
+              el('div', { class: 'block', style: 'height:10px;width:68%;margin-bottom:8px;opacity:.8' }),
+              el('div', { class: 'block', style: 'height:10px;width:54%;opacity:.7' })
+            ])
+          ]),
+          el('div', { class: 's-actions' }, [
+            el('div', { class: 'block', style: 'height:36px;width:122px' }),
+            el('div', { class: 'block', style: 'height:36px;width:98px;opacity:.85' })
+          ])
+        ]);
+        resultsWrap.append(card);
+      }
+    }
+
+    function filenameSafe(s) {
+      return String(s || '')
+        .trim()
+        .replace(/[\\/:*?"<>|]+/g, '-')
+        .replace(/\s+/g, ' ')
+        .slice(0, 120);
+    }
+
+    function cardFor(item, idx) {
+      const thumbUrl = item.thumbnail || '';
+      const title = item.title || 'Untitled';
+      const artist = item.artist || '';
+      const album = item.album || '';
+      const openUrl = item.url || item.open_url || '';
+      const previewUrl = item.preview || item.preview_url || '';
+
+      const dlBox = el('div', { class: 's-dl', 'aria-live': 'polite' });
+
+      const btnDl = el(
+        'button',
+        {
+          class: 's-btn primary',
+          type: 'button',
+          onclick: async () => {
+            if (!openUrl) return;
+            if (state.downloadBusy.has(openUrl)) return;
+            state.downloadBusy.add(openUrl);
+            btnDl.disabled = true;
+            btnDl.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Fetching...</span>';
+            dlBox.classList.remove('show');
+            dlBox.innerHTML = '';
+            showActivity('Preparing download...', 'info', { sticky: true });
+            try {
+              const info = await apiGet('/spotify/download', { url: openUrl });
+              const chipNodes = [
+                el('span', { class: 's-chip', html: escapeHtml(info.quality || 'HQ') }),
+                el('span', { class: 's-chip', html: escapeHtml(info.extension || 'mp3') })
+              ];
+              if (info.duration) chipNodes.push(el('span', { class: 's-chip', html: escapeHtml(info.duration) }));
+              const chips = el('div', { class: 'line' }, chipNodes);
+
+              const linkUrl = info.download || '';
+              const btnSave = el(
+                'button',
+                {
+                  class: 's-btn ghost',
+                  type: 'button',
+                  onclick: async () => {
+                    if (!linkUrl) return;
+                    showActivity('Downloading...', 'info', { sticky: true });
+                    const name = filenameSafe(`${info.title || title} - ${info.artist || artist}`) || 'spotify-download';
+                    const ext = String(info.extension || 'mp3').replace(/\W+/g, '') || 'mp3';
+                    await downloadFile(linkUrl, `${name}.${ext}`);
+                    showActivity('Download ready', 'success');
+                  }
+                },
+                [el('i', { class: 'fas fa-download' }), el('span', { html: 'Download' })]
+              );
+
+              const openBtn = el(
+                'a',
+                {
+                  class: 's-btn ghost',
+                  href: openUrl,
+                  target: '_blank',
+                  rel: 'noreferrer'
+                },
+                [el('i', { class: 'fas fa-arrow-up-right-from-square' }), el('span', { html: 'Open' })]
+              );
+
+              dlBox.append(
+                el('div', { class: 'line' }, [
+                  el('span', { class: 's-chip', html: '<i class="fas fa-music"></i> Ready' })
+                ]),
+                chips,
+                el('div', { class: 'line' }, [btnSave, openBtn])
+              );
+              dlBox.classList.add('show');
+              showActivity('Download info ready', 'success');
+            } catch (e) {
+              dlBox.innerHTML = '<div class="subtitle" style="margin:0">Gagal mengambil link download: ' + escapeHtml(e.message || 'error') + '</div>';
+              dlBox.classList.add('show');
+              showActivity('Download failed', 'error');
+            } finally {
+              state.downloadBusy.delete(openUrl);
+              btnDl.disabled = false;
+              btnDl.innerHTML = '<i class="fas fa-download"></i><span>Download</span>';
+            }
+          }
+        },
+        [el('i', { class: 'fas fa-download' }), el('span', { html: 'Download' })]
+      );
+
+      const btnPreview = el(
+        'button',
+        {
+          class: 's-btn',
+          type: 'button',
+          disabled: !previewUrl,
+          title: previewUrl ? 'Play preview' : 'Preview tidak tersedia',
+          onclick: async () => {
+            if (!previewUrl) return;
+            const willPause = state.playingUrl === previewUrl && !preview.paused;
+            try {
+              if (willPause) {
+                preview.pause();
+                state.playingUrl = '';
+                state.playingBtn = null;
+                btnPreview.innerHTML = '<i class="fas fa-play"></i><span>Preview</span>';
+                showActivity('Preview paused', 'success');
+                return;
+              }
+              if (state.playingBtn && state.playingBtn !== btnPreview) {
+                state.playingBtn.innerHTML = '<i class="fas fa-play"></i><span>Preview</span>';
+              }
+              if (!preview.paused) preview.pause();
+              state.playingUrl = previewUrl;
+              state.playingBtn = btnPreview;
+              preview.src = previewUrl;
+              await preview.play();
+              btnPreview.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
+              showActivity(`Now Playing: ${title}`, 'info', { sticky: true });
+            } catch (e) {
+              state.playingUrl = '';
+              state.playingBtn = null;
+              btnPreview.innerHTML = '<i class="fas fa-play"></i><span>Preview</span>';
+              showActivity('Preview gagal diputar', 'error');
+            }
+          }
+        },
+        [el('i', { class: 'fas fa-play' }), el('span', { html: 'Preview' })]
+      );
+
+      const img = thumbUrl
+        ? el('img', { src: thumbUrl, alt: title, loading: 'lazy' })
+        : el('div', { class: 'subtitle', html: '<i class="fas fa-music"></i>' });
+
+      const card = el('div', { class: 's-card enter', style: `animation-delay:${Math.min(idx, 10) * 35}ms` }, [
+        el('div', { class: 's-row' }, [
+          el('div', { class: 's-thumb' }, [img]),
+          el('div', { class: 's-meta' }, [
+            el('p', { class: 's-title', title: title, html: escapeHtml(title) }),
+            el('div', { class: 's-sub', html: `${escapeHtml(artist)}${album ? ' • ' + escapeHtml(album) : ''}` })
+          ])
+        ]),
+        el('div', { class: 's-actions' }, [btnDl, btnPreview]),
+        dlBox
+      ]);
+
+      return card;
+    }
+
+    function render() {
+      if (state.loading) {
+        renderSkeleton();
+        return;
+      }
+      resultsWrap.innerHTML = '';
+      if (state.error) {
+        resultsWrap.append(
+          el('div', {
+            class: 's-empty',
+            html:
+              '<div class="title" style="margin:0 0 6px"><i class="fas fa-triangle-exclamation"></i> Gagal</div>' +
+              '<div class="subtitle" style="margin:0">' +
+              escapeHtml(state.error) +
+              '</div>'
+          })
+        );
+        return;
+      }
+      if (!state.results.length) {
+        resultsWrap.append(empty());
+        return;
+      }
+      state.results.forEach((it, idx) => resultsWrap.append(cardFor(it, idx)));
+    }
+
+    async function doSearch() {
+      const q = input.value.trim();
+      setError('');
+      setInfo('');
+      if (!q) {
+        state.results = [];
+        state.currentQuery = '';
+        render();
+        return;
+      }
+
+      state.loading = true;
+      state.currentQuery = q;
+      render();
+      showActivity('Searching Spotify...', 'info', { sticky: true });
+
+      try {
+        const data = await apiGet('/spotify/search', { q, limit: 18 });
+        state.results = Array.isArray(data?.results) ? data.results : [];
+        state.loading = false;
+        setInfo(state.results.length ? `OK: ${state.results.length} hasil.` : 'OK: tidak ada hasil.');
+        showActivity(state.results.length ? `Spotify: ${state.results.length} results` : 'Spotify: empty', 'success');
+        render();
+      } catch (e) {
+        state.loading = false;
+        setError(e.message || 'Gagal mencari.');
+        showActivity('Spotify search failed', 'error');
+        render();
+      }
+    }
+
+    const btn = el(
+      'button',
+      {
+        class: 'primary-btn',
+        type: 'button',
+        onclick: doSearch
+      },
+      [el('i', { class: 'fas fa-magnifying-glass' }), el('span', { html: 'Search' })]
+    );
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') doSearch();
+    });
+
+    render();
+
+    return el('div', { class: 'spotify-page' }, [
+      el('div', { class: 'panel' }, [
+        el('h2', { class: 'title', html: '<i class="fab fa-spotify"></i> Spotify' }),
+        el('p', { class: 'subtitle', html: 'Cari lagu, lalu download. Preview tombol hanya muncul jika API menyediakan preview.' }),
+        el('div', { class: 'spotify-toolbar' }, [
+          el('div', { class: 'row' }, [input, btn]),
+          noticeErr,
+          noticeOk
+        ])
+      ]),
+      resultsWrap
     ]);
   }
 
@@ -450,12 +875,17 @@
       } else {
         noticeOk.style.display = 'none';
       }
+
+      if (loading) {
+        showActivity(`Processing ${cfg.label}...`, 'info', { sticky: true });
+      }
     }
 
     function showError(msg) {
       noticeErr.textContent = 'Error: ' + msg;
       noticeErr.style.display = 'block';
       noticeOk.style.display = 'none';
+      showActivity(`${cfg.label}: ${msg}`, 'error');
     }
 
     function clearNotices() {
@@ -473,6 +903,20 @@
       resultWrap.append(title);
 
       if (result.type === 'photo' && Array.isArray(result.images)) {
+        if (result.images.length) {
+          const gallery = el('div', { class: 'preview gallery' }, [
+            el(
+              'div',
+              { class: 'gallery-track' },
+              result.images.slice(0, 8).map((u, idx) =>
+                el('div', { class: 'gallery-card' }, [
+                  el('img', { src: u, alt: `image ${idx + 1}` })
+                ])
+              )
+            )
+          ]);
+          resultWrap.append(gallery);
+        }
         const dl = el('div', { class: 'dl-grid' });
         result.images.slice(0, 12).forEach((u, idx) => {
           dl.append(
@@ -488,10 +932,26 @@
 
       // Generic image preview (Instagram photos, etc)
       if (!result.video && (result.image || (Array.isArray(result.images) && result.images.length))) {
-        const imgUrl = result.image || result.images[0];
-        if (imgUrl) {
-          const prevImg = el('div', { class: 'preview' }, [el('img', { src: imgUrl, alt: 'preview' })]);
-          resultWrap.append(prevImg);
+        const imgs = Array.isArray(result.images) ? result.images : [];
+        if (imgs.length > 1) {
+          const gallery = el('div', { class: 'preview gallery' }, [
+            el(
+              'div',
+              { class: 'gallery-track' },
+              imgs.slice(0, 8).map((u, idx) =>
+                el('div', { class: 'gallery-card' }, [
+                  el('img', { src: u, alt: `image ${idx + 1}` })
+                ])
+              )
+            )
+          ]);
+          resultWrap.append(gallery);
+        } else {
+          const imgUrl = result.image || imgs[0];
+          if (imgUrl) {
+            const prevImg = el('div', { class: 'preview' }, [el('img', { src: imgUrl, alt: 'preview' })]);
+            resultWrap.append(prevImg);
+          }
         }
       }
 
@@ -552,6 +1012,7 @@
         progress.firstElementChild.style.width = '100%';
         noticeOk.textContent = 'OK: selesai. Silakan preview / download.';
         noticeOk.style.display = 'block';
+        showActivity(`${cfg.label}: done`, 'success');
         renderResult(data);
       } catch (e) {
         showError(e.message || 'Gagal memproses.');
@@ -635,6 +1096,12 @@
       title: 'QR Generator',
       subtitle: 'Tools',
       render: () => qrView()
+    },
+    {
+      path: '/spotify',
+      title: 'Spotify',
+      subtitle: 'Search & Download',
+      render: () => spotifyView()
     },
     {
       path: '/tiktok',
