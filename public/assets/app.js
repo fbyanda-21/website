@@ -4,12 +4,7 @@
 
   const viewEl = qs('#view');
   const routeTitleEl = qs('#routeTitle');
-  const apiStatusEl = qs('#apiStatus');
-  const timeEl = qs('#currentTime');
-
-  const activityPill = qs('#activityPill');
-  const activityText = qs('#activityText');
-  const activityHandle = qs('#activityHandle');
+  const spotifyFab = qs('#spotifyFab');
 
   function navigate(path) {
     history.pushState({}, '', path);
@@ -32,7 +27,7 @@
       if (path === '/tiktok') return '/tiktok';
       if (path === '/instagram') return '/instagram';
       if (path === '/youtube') return '/youtube';
-      if (['/more', '/facebook', '/qr-generator', '/music'].includes(path)) return '/more';
+      if (['/more', '/facebook', '/qr-generator', '/spotify'].includes(path)) return '/more';
       return '/dashboard';
     };
 
@@ -42,18 +37,6 @@
       a.classList.toggle('active', href === activeGroup);
     });
   }
-
-  function updateClock() {
-    const now = new Date();
-    timeEl.textContent = now.toLocaleTimeString('id-ID', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-  }
-
-  setInterval(updateClock, 1000);
-  updateClock();
 
   function getApiBase() {
     const meta = qs('meta[name="api-base"]');
@@ -65,101 +48,38 @@
 
   const API_BASE = getApiBase();
 
-  async function checkApi(attempt = 0) {
-    apiStatusEl.textContent = 'checking...';
-    try {
-      const url = (API_BASE || '') + '/api/v1/health';
-      const res = await fetch(url, { cache: 'no-store' });
-      if (res.ok) {
-        apiStatusEl.textContent = 'online';
-        apiStatusEl.style.color = 'var(--good)';
-        return;
-      }
-      if (res.status === 429) {
-        apiStatusEl.textContent = 'limited';
-        apiStatusEl.style.color = 'var(--secondary)';
-        return;
-      }
-      apiStatusEl.textContent = 'down';
-      apiStatusEl.style.color = 'var(--bad)';
-    } catch (e) {
-      apiStatusEl.textContent = 'down';
-      apiStatusEl.style.color = 'var(--bad)';
-    }
-
-    if (attempt < 2) {
-      setTimeout(() => checkApi(attempt + 1), 1200);
-    }
-  }
-
-  checkApi();
-
-  const activityState = {
-    hideTimer: null,
-    expanded: false,
-    lastText: '',
-    lastKind: 'info',
-    seq: 0
+  const fabState = {
+    timer: null,
+    active: false
   };
 
   function showActivity(text, kind, { sticky } = {}) {
-    if (!activityPill || !activityText) return;
+    // Kept for internal calls; represented via FAB state.
+    if (!spotifyFab) return;
+    const label = String(text || '').trim() || 'Spotify';
+    spotifyFab.setAttribute('aria-label', label);
+    spotifyFab.title = label;
+    spotifyFab.dataset.active = kind === 'info' ? '1' : '0';
+    fabState.active = spotifyFab.dataset.active === '1';
 
-    activityState.seq += 1;
-    const seq = activityState.seq;
-
-    activityState.lastText = String(text || '').trim() || 'Working...';
-    activityState.lastKind = kind || activityState.lastKind || 'info';
-    activityText.textContent = activityState.lastText;
-    activityPill.dataset.kind = activityState.lastKind;
-    activityPill.dataset.active = activityState.lastKind === 'info' ? '1' : '0';
-    if (activityHandle) {
-      activityHandle.dataset.active = activityPill.dataset.active;
-      activityHandle.hidden = true;
-    }
-    activityPill.hidden = false;
-    activityPill.classList.remove('shrink');
-
-    if (activityState.hideTimer) window.clearTimeout(activityState.hideTimer);
+    if (fabState.timer) window.clearTimeout(fabState.timer);
     if (!sticky) {
-      activityState.hideTimer = window.setTimeout(() => {
-        if (activityState.seq !== seq) return;
-        if (activityState.expanded) return;
-        activityPill.classList.add('shrink');
-        window.setTimeout(() => {
-          if (activityState.seq !== seq) return;
-          if (!activityState.expanded) {
-            activityPill.hidden = true;
-            if (activityHandle) {
-              activityHandle.hidden = false;
-              activityHandle.classList.remove('showing');
-              // Force reflow for animation.
-              void activityHandle.offsetWidth;
-              activityHandle.classList.add('showing');
-            }
-          }
-        }, 200);
-      }, 5000);
+      fabState.timer = window.setTimeout(() => {
+        spotifyFab.dataset.active = '0';
+        fabState.active = false;
+      }, 2500);
     }
   }
 
-  if (activityPill) {
-    activityPill.addEventListener('click', () => {
-      activityState.expanded = !activityState.expanded;
-      if (activityState.expanded) {
-        showActivity(activityState.lastText || 'Ready', activityPill.dataset.kind || 'info', { sticky: true });
-      } else {
-        showActivity(activityState.lastText || 'Ready', activityPill.dataset.kind || 'info', { sticky: false });
-      }
-    });
+  function handleFabClick() {
+    if (window.__spotifyFabToggle && typeof window.__spotifyFabToggle === 'function') {
+      window.__spotifyFabToggle();
+      return;
+    }
+    navigate('/spotify');
   }
 
-  if (activityHandle) {
-    activityHandle.addEventListener('click', () => {
-      activityState.expanded = true;
-      showActivity(activityState.lastText || 'Ready', activityState.lastKind || 'info', { sticky: true });
-    });
-  }
+  if (spotifyFab) spotifyFab.addEventListener('click', handleFabClick);
 
   function el(tag, attrs = {}, children = []) {
     const node = document.createElement(tag);
@@ -403,6 +323,8 @@
     function openPlayer(track) {
       player.track = track;
       player.open = true;
+
+      if (spotifyFab) spotifyFab.style.opacity = '0';
       overlay.classList.add('open');
       sheet.classList.add('open');
       overlay.style.display = 'block';
@@ -437,6 +359,11 @@
       window.setTimeout(() => {
         if (!player.open) overlay.style.display = 'none';
       }, 220);
+
+      if (spotifyFab) {
+        spotifyFab.style.opacity = '1';
+        spotifyFab.dataset.active = playerAudio && !playerAudio.paused ? '1' : '0';
+      }
       if (player.raf) window.cancelAnimationFrame(player.raf);
       player.raf = 0;
     }
@@ -526,7 +453,23 @@
     playerAudio.addEventListener('ended', () => {
       btnPlay.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
       showActivity('Ended', 'success');
+      if (spotifyFab) spotifyFab.dataset.active = '0';
     });
+
+    playerAudio.addEventListener('play', () => {
+      if (spotifyFab) spotifyFab.dataset.active = '1';
+    });
+
+    playerAudio.addEventListener('pause', () => {
+      if (spotifyFab) spotifyFab.dataset.active = '0';
+    });
+
+    window.__spotifyFabToggle = () => {
+      if (player.open) return closePlayer();
+      if (player.track) return openPlayer(player.track);
+      // If no track picked yet, go to Spotify search.
+      navigate('/spotify');
+    };
 
     // Default download handler (updated when resolveStream returns info)
     btnDownload.onclick = async () => {

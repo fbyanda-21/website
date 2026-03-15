@@ -115,43 +115,6 @@ body {
   align-items: center;
 }
 
-.chip {
-  border-radius: 999px;
-  padding: 8px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.86);
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-.activity-pill {
-  border-radius: 999px;
-  padding: 9px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  max-width: 42vw;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  transform-origin: right center;
-  transition:
-    transform 180ms cubic-bezier(0.2, 0.9, 0.2, 1),
-    opacity 180ms cubic-bezier(0.2, 0.9, 0.2, 1),
-    background 180ms ease,
-    border-color 180ms ease;
-}
-
-.activity-pill:active {
-  transform: scale(0.98);
-}
-
 .np-bars {
   display: inline-flex;
   align-items: flex-end;
@@ -183,64 +146,82 @@ body {
   animation-delay: -420ms;
 }
 
-.activity-pill[data-active="1"] .np-bars span,
-.activity-handle[data-active="1"] .np-bars span {
+.spotify-fab[data-active="1"] .np-bars span,
+.np-sheet[data-active="1"] .np-bars span {
   animation-play-state: running;
 }
 
-.activity-pill[data-kind="success"] .np-bars span {
-  background: rgba(0, 255, 123, 0.86);
-}
-
-.activity-pill[data-kind="error"] .np-bars span {
-  background: rgba(255, 59, 59, 0.86);
-}
-
-.activity-pill.shrink {
-  opacity: 0;
-  transform: scale(0.88);
-}
-
-.activity-handle {
-  width: 40px;
-  height: 36px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.92);
+.spotify-fab {
+  position: fixed;
+  right: 14px;
+  bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.16), transparent 44%),
+    rgba(29, 185, 84, 0.22);
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(14px);
+  color: rgba(255, 255, 255, 0.95);
+  cursor: pointer;
+  z-index: 119;
   display: grid;
   place-items: center;
-  cursor: pointer;
-  transform-origin: right center;
   transition:
-    transform 180ms cubic-bezier(0.2, 0.9, 0.2, 1),
-    opacity 180ms cubic-bezier(0.2, 0.9, 0.2, 1),
+    transform 140ms cubic-bezier(0.2, 0.9, 0.2, 1),
+    border-color 180ms ease,
     background 180ms ease,
-    border-color 180ms ease;
+    opacity 180ms ease;
 }
 
-/* Safety: never show handle while pill is visible */
-#activityPill:not([hidden]) + #activityHandle {
-  display: none !important;
+.spotify-fab:active {
+  transform: scale(0.985);
 }
 
-.activity-handle:active {
-  transform: scale(0.97);
+.spotify-fab::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 22px;
+  background: radial-gradient(circle, rgba(29, 185, 84, 0.28), transparent 62%);
+  opacity: 0;
+  transform: scale(0.92);
+  transition: opacity 200ms ease, transform 200ms ease;
+  pointer-events: none;
 }
 
-.activity-handle.showing {
-  animation: handle-in 240ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+.spotify-fab[data-active="1"]::after {
+  opacity: 1;
+  transform: scale(1);
 }
 
-@keyframes handle-in {
-  from {
-    opacity: 0;
-    transform: translateX(8px) scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-  }
+.spotify-fab-logo {
+  width: 26px;
+  height: 26px;
+  display: block;
+}
+
+.spotify-fab .np-bars {
+  position: absolute;
+  inset: 0;
+  display: inline-flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding-bottom: 14px;
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.spotify-fab[data-active="1"] .np-bars {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.spotify-fab[data-active="1"] .spotify-fab-logo {
+  opacity: 0;
 }
 
 @keyframes np-bars {
@@ -260,9 +241,6 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .np-bars span {
-    animation: none;
-  }
-  .activity-handle.showing {
     animation: none;
   }
 }

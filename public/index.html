@@ -26,17 +26,7 @@
           </div>
         </div>
 
-        <div class="appbar-right">
-          <button class="activity-pill" id="activityPill" type="button" aria-label="Activity" hidden>
-            <span class="np-bars" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
-            <span class="activity-text" id="activityText">Processing...</span>
-          </button>
-          <button class="activity-handle" id="activityHandle" type="button" aria-label="Show activity" hidden>
-            <span class="np-bars" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
-          </button>
-          <div class="chip" title="API status">API: <span id="apiStatus">checking...</span></div>
-          <div class="chip" title="Jam"><span id="currentTime">--:--:--</span></div>
-        </div>
+        <div class="appbar-right"></div>
       </header>
 
       <main class="content" role="main">
@@ -53,6 +43,11 @@
         <a class="nav-btn" href="/youtube" data-link><i class="fab fa-youtube"></i><span>YT</span></a>
         <a class="nav-btn" href="/more" data-link><i class="fas fa-ellipsis"></i><span>More</span></a>
       </nav>
+
+      <button class="spotify-fab" id="spotifyFab" type="button" aria-label="Spotify" title="Spotify">
+        <img class="spotify-fab-logo" src="/assets/img/spotify.svg" alt="" aria-hidden="true" />
+        <span class="np-bars" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+      </button>
     </div>
   </body>
 </html>
