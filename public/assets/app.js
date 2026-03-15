@@ -228,6 +228,8 @@
   }
 
   const spotifyPlayer = (() => {
+    const UPLOAD_URL = 'https://c.termai.cc/api/upload?key=AIzaBj7z2z3xBjsk';
+
     const audio = new Audio();
     audio.preload = 'none';
 
@@ -292,6 +294,12 @@
       el('span', { html: 'Download' })
     ]);
 
+    const uploadInput = el('input', { type: 'file', accept: 'audio/*', hidden: 'true' });
+    const btnUpload = el('button', { class: 's-btn ghost', type: 'button' }, [
+      el('i', { class: 'fas fa-cloud-arrow-up' }),
+      el('span', { html: 'Upload' })
+    ]);
+
     const btnOpen = el('a', { class: 's-btn ghost', href: '#', target: '_blank', rel: 'noreferrer' }, [
       el('i', { class: 'fas fa-arrow-up-right-from-square' }),
       el('span', { html: 'Open' })
@@ -308,7 +316,7 @@
           titleWrap,
           el('div', { class: 'np-progress' }, [bar, seek, timeRow]),
           el('div', { class: 'np-controls' }, [transport, volRow, hint]),
-          el('div', { class: 'np-actions' }, [btnDownload, btnOpen])
+          el('div', { class: 'np-actions' }, [btnDownload, btnUpload, btnOpen])
         ])
       ])
     );
@@ -318,6 +326,7 @@
       if (mounted) return;
       overlay.append(sheet);
       sheet.addEventListener('click', (e) => e.stopPropagation());
+      overlay.append(uploadInput);
       document.body.append(overlay);
       mounted = true;
     }
@@ -506,6 +515,58 @@
       const t = state.track || {};
       await downloadFile(state.streamUrl, `${filenameSafe(`${t.title || 'spotify'} - ${t.artist || ''}`) || 'spotify-download'}.mp3`);
       showActivity('Download ready', 'success');
+    });
+
+    async function uploadAndPlay(file) {
+      if (!file) return;
+      showActivity('Uploading audio...', 'info', { sticky: true });
+      btnUpload.disabled = true;
+      btnUpload.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Uploading...</span>';
+
+      try {
+        const fd = new FormData();
+        fd.append('file', file, file.name || 'audio');
+        const res = await fetch(UPLOAD_URL, { method: 'POST', body: fd });
+        const ct = String(res.headers.get('content-type') || '');
+        const data = ct.includes('application/json') ? await res.json() : null;
+        if (!res.ok || !data || data.status !== true || !data.path) {
+          throw new Error(data?.message || `Upload failed (HTTP ${res.status})`);
+        }
+
+        const url = String(data.path);
+        state.streamUrl = url;
+        btnPlay.disabled = false;
+        btnPlay.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+        btnDownload.disabled = false;
+        btnDownload.innerHTML = '<i class="fas fa-download"></i><span>Download</span>';
+
+        // Update meta from filename if we don't have a track.
+        const name = String(file.name || 'Uploaded audio').replace(/\.[A-Za-z0-9]+$/, '').trim();
+        if (!state.track) state.track = { title: name, artist: '', album: '', thumbnail: '', url: '' };
+        if (state.track) {
+          state.track.title = state.track.title || name;
+          setUiForTrack({ ...state.track, title: state.track.title || name });
+        }
+
+        showActivity('Upload ready', 'success');
+        await playUrl(url);
+      } catch (e) {
+        showActivity('Upload failed', 'error');
+        hint.textContent = 'Upload gagal. Coba file lain atau ulangi.';
+      } finally {
+        btnUpload.disabled = false;
+        btnUpload.innerHTML = '<i class="fas fa-cloud-arrow-up"></i><span>Upload</span>';
+      }
+    }
+
+    btnUpload.addEventListener('click', () => {
+      uploadInput.value = '';
+      uploadInput.click();
+    });
+
+    uploadInput.addEventListener('change', () => {
+      const f = uploadInput.files && uploadInput.files[0];
+      if (f) uploadAndPlay(f);
     });
 
     audio.addEventListener('play', () => {
