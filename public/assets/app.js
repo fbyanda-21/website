@@ -230,6 +230,23 @@
   const spotifyPlayer = (() => {
     const UPLOAD_URL = 'https://c.termai.cc/api/upload?key=AIzaBj7z2z3xBjsk';
 
+    const CACHE_KEY = 'spotify-upload-cache-v1';
+    function loadCache() {
+      try {
+        const raw = window.localStorage.getItem(CACHE_KEY);
+        const obj = raw ? JSON.parse(raw) : null;
+        return obj && typeof obj === 'object' ? obj : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveCache(obj) {
+      try {
+        window.localStorage.setItem(CACHE_KEY, JSON.stringify(obj || {}));
+      } catch {}
+    }
+
     const audio = new Audio();
     audio.preload = 'none';
 
@@ -240,7 +257,9 @@
       queue: [],
       index: -1,
       streamUrl: '',
-      raf: 0
+      raf: 0,
+      uploadCache: loadCache(),
+      needsFile: false
     };
 
     const overlay = el('div', { class: 'np-overlay' });
@@ -295,10 +314,6 @@
     ]);
 
     const uploadInput = el('input', { type: 'file', accept: 'audio/*', hidden: 'true' });
-    const btnUpload = el('button', { class: 's-btn ghost', type: 'button' }, [
-      el('i', { class: 'fas fa-cloud-arrow-up' }),
-      el('span', { html: 'Upload' })
-    ]);
 
     const btnOpen = el('a', { class: 's-btn ghost', href: '#', target: '_blank', rel: 'noreferrer' }, [
       el('i', { class: 'fas fa-arrow-up-right-from-square' }),
@@ -316,7 +331,7 @@
           titleWrap,
           el('div', { class: 'np-progress' }, [bar, seek, timeRow]),
           el('div', { class: 'np-controls' }, [transport, volRow, hint]),
-          el('div', { class: 'np-actions' }, [btnDownload, btnUpload, btnOpen])
+          el('div', { class: 'np-actions' }, [btnDownload, btnOpen])
         ])
       ])
     );
@@ -370,6 +385,32 @@
       btnOpen.style.opacity = t?.url ? '1' : '0.6';
     }
 
+    function cacheKeyForTrack(t) {
+      const url = String(t?.url || '').trim();
+      if (url) return `url:${url}`;
+      const title = String(t?.title || '').trim();
+      const artist = String(t?.artist || '').trim();
+      if (title || artist) return `meta:${title}::${artist}`;
+      return '';
+    }
+
+    function applyCachedUploadIfAny(track) {
+      const key = cacheKeyForTrack(track);
+      if (!key) return false;
+      const hit = state.uploadCache[key];
+      const path = String(hit?.path || '').trim();
+      if (!path) return false;
+
+      state.streamUrl = path;
+      state.needsFile = false;
+      btnPlay.disabled = false;
+      btnPlay.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+      btnDownload.disabled = false;
+      btnDownload.innerHTML = '<i class="fas fa-download"></i><span>Download</span>';
+      hint.textContent = 'Ready (cached upload). Tap Play.';
+      return true;
+    }
+
     async function playUrl(u) {
       if (!u) return;
       if (audio.src !== u) audio.src = u;
@@ -387,9 +428,17 @@
       state.loading = true;
       showActivity('Preparing playback...', 'info', { sticky: true });
 
+      // Prefer previously uploaded copy (user-provided).
+      if (applyCachedUploadIfAny(t)) {
+        state.loading = false;
+        showActivity('Ready', 'success');
+        return;
+      }
+
       const preferred = String(t?.preview || '').trim();
       if (preferred) {
         state.streamUrl = preferred;
+        state.needsFile = false;
         btnDownload.disabled = false;
         btnDownload.innerHTML = '<i class="fas fa-download"></i><span>Download</span>';
         btnPlay.disabled = false;
@@ -405,6 +454,7 @@
         const u = String(info.download || '').trim();
         if (!u) throw new Error('Download link not available');
         state.streamUrl = u;
+        state.needsFile = false;
 
         btnDownload.disabled = false;
         btnDownload.innerHTML = '<i class="fas fa-download"></i><span>Download</span>';
@@ -421,12 +471,14 @@
         await playUrl(u);
       } catch {
         state.loading = false;
-        btnPlay.disabled = true;
-        btnPlay.innerHTML = '<i class="fas fa-triangle-exclamation"></i><span>Unavailable</span>';
+        state.streamUrl = '';
+        state.needsFile = true;
+        btnPlay.disabled = false;
+        btnPlay.innerHTML = '<i class="fas fa-cloud-arrow-up"></i><span>Choose MP3</span>';
         btnDownload.disabled = true;
         btnDownload.innerHTML = '<i class="fas fa-triangle-exclamation"></i><span>Failed</span>';
-        hint.textContent = 'Playback gagal. Provider kadang block / rate limit. Coba lagi beberapa saat.';
-        showActivity('Playback failed', 'error');
+        hint.textContent = 'Pilih file MP3 dari device, akan di-upload lalu diputar full.';
+        showActivity('Need local file', 'error');
       }
     }
 
@@ -482,7 +534,13 @@
     }
 
     function togglePlay() {
-      if (!state.streamUrl) return;
+      if (!state.streamUrl) {
+        // Must be triggered by user gesture.
+        uploadInput.value = '';
+        uploadInput.click();
+        return;
+      }
+
       if (audio.paused) playUrl(state.streamUrl);
       else {
         audio.pause();
@@ -520,8 +578,8 @@
     async function uploadAndPlay(file) {
       if (!file) return;
       showActivity('Uploading audio...', 'info', { sticky: true });
-      btnUpload.disabled = true;
-      btnUpload.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Uploading...</span>';
+      btnPlay.disabled = true;
+      btnPlay.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Uploading...</span>';
 
       try {
         const fd = new FormData();
@@ -535,6 +593,7 @@
 
         const url = String(data.path);
         state.streamUrl = url;
+        state.needsFile = false;
         btnPlay.disabled = false;
         btnPlay.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
         btnDownload.disabled = false;
@@ -548,21 +607,25 @@
           setUiForTrack({ ...state.track, title: state.track.title || name });
         }
 
+        // Cache uploaded URL for this track.
+        const k = cacheKeyForTrack(state.track);
+        if (k) {
+          state.uploadCache[k] = { path: url, at: Date.now() };
+          saveCache(state.uploadCache);
+        }
+
         showActivity('Upload ready', 'success');
         await playUrl(url);
       } catch (e) {
         showActivity('Upload failed', 'error');
         hint.textContent = 'Upload gagal. Coba file lain atau ulangi.';
       } finally {
-        btnUpload.disabled = false;
-        btnUpload.innerHTML = '<i class="fas fa-cloud-arrow-up"></i><span>Upload</span>';
+        if (state.needsFile && !state.streamUrl) {
+          btnPlay.disabled = false;
+          btnPlay.innerHTML = '<i class="fas fa-cloud-arrow-up"></i><span>Choose MP3</span>';
+        }
       }
     }
-
-    btnUpload.addEventListener('click', () => {
-      uploadInput.value = '';
-      uploadInput.click();
-    });
 
     uploadInput.addEventListener('change', () => {
       const f = uploadInput.files && uploadInput.files[0];
